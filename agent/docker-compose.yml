@@ -1,0 +1,36 @@
+services:
+  agent:
+    build: .
+    environment:
+      HOST_GID: $GID
+      HOST_UID: $UID
+      http_proxy: http://egress:8888
+      https_proxy: http://egress:8888
+      WORKING_DIR: $WORKING_DIR
+    hostname: agent
+    networks: [walled]
+    dns: ["0.0.0.0"]
+    extra_hosts:
+      - "egress:10.88.0.2"
+    volumes:
+      - ./home:/home/user
+      - $PROJECT_DIR/src:/home/user/src
+      - $PROJECT_DIR/.git:/home/user/.git
+      - $PROJECT_DIR/.gitmodules:/home/user/.gitmodules
+      - $PROJECT_DIR/CLAUDE.md:/home/user/CLAUDE.md
+    working_dir: /home/user/$WORKING_DIR
+    depends_on: [egress]
+  egress:
+    build: ./egress
+    hostname: egress
+    networks:
+      walled:
+        ipv4_address: 10.88.0.2
+      outside: {}
+networks:
+  walled:
+    internal: true
+    ipam:
+      config:
+        - subnet: 10.88.0.0/24
+  outside: {}

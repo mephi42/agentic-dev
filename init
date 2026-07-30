@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import subprocess
 import sys
 from dataclasses import dataclass
 from os.path import dirname
 from pathlib import Path
+from subprocess import check_call
 
 import yaml
 
@@ -12,7 +12,7 @@ BASEDIR = Path(dirname(sys.argv[0]))
 
 def check_call_verbose(argv, **kwargs):
     print("+", argv, file=sys.stderr)
-    subprocess.check_call(argv, **kwargs)
+    check_call(argv, **kwargs)
 
 
 def ensure_key(priv: Path):
@@ -54,14 +54,32 @@ def main():
     agent_priv = agent_ssh / "id_ed25519"
     agent_pub = agent_ssh / "id_ed25519.pub"
     agent_hosts = agent_ssh / "known_hosts"
+    agent_config = agent_ssh / "config"
     ensure_key(agent_priv)
     for container in containers:
         ensure_key(container.host_priv)
+
+    # Generate ssh client config.
+    agent_config.write_text(
+        "\n".join(
+            f"Host {container.name}\n"
+            f"    ProxyCommand socat - "
+            f"UNIX-CONNECT:/home/user/.ssh/sshd-{container.name}.sock\n"
+            f"    User user\n"
+            for container in containers
+        )
+    )
 
     # Prepare keys for distribution.
     known_hosts = []
     for container in containers:
         (container.dev_ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
+        (container.dev_ssh / "sshd_config").write_text("""\
+Port 2222
+HostKey /home/user/.ssh/ssh_host_ed25519_key
+SetEnv http_proxy=http://egress:8888 https_proxy=http://egress:8888
+Subsystem sftp internal-sftp
+""")
         known_hosts.append(
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )

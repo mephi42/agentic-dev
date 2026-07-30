@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+import shlex
+import sys
+from argparse import ArgumentParser
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
+from os import execvp, getcwd
+from os.path import join, relpath
+from subprocess import CalledProcessError, call, check_call, check_output
+from time import sleep
+from typing import List
+
+MAX_WORKERS = 24  # Established empirically with hyperfine.
+
+
+def stash(repo: str) -> str:
+    for i in range(3):
+        try:
+            commit = check_output(
+                ["git", "stash", "create"], text=True, cwd=repo
+            ).strip()
+        except CalledProcessError:
+            # git stash can fail when there is a concurrent invocation; retry.
+            if i == 2:
+                raise
+            sleep(0.1)
+        else:
+            if len(commit) == 0:
+                commit = check_output(
+                    ["git", "rev-parse", "HEAD"], text=True, cwd=repo
+                ).strip()
+            return commit[:12]
+    raise RuntimeError()
+
+
+def git_push(target: str, local_repo: str, rel_module: str) -> str:
+    local_module = join(local_repo, rel_module)
+    commit = stash(local_module)
+
+    def try_push():
+        print(f"\033[96mPUSH\033[0m {rel_module} -> {target}/{rel_module}")
+        return call(
+            [
+                "git",
+                "push",
+                "-f",
+                "--recurse-submodules=no",
+                f"{target}/{rel_module}",
+                f"{commit}:refs/tags/sync-git",
+            ],
+            cwd=local_module,
+        )
+
+    if try_push() != 0:
+        # Assume git repo is missing.
+        host, host_repo = target.split(":")
+        check_call(["ssh", host, f"git init {host_repo}/{rel_module}"])
+        if try_push() != 0:
+            print(f"Error while pushing to {rel_module}", file=sys.stderr)
+
+    return commit
+
+
+def get_toplevel(path):
+    return (
+        check_output(["git", "rev-parse", "--show-toplevel"], cwd=path).strip().decode()
+    )
+
+
+def get_modules(repo):
+    raw = (
+        check_output(
+            [
+                "git",
+                "submodule",
+                "foreach",
+                "--quiet",
+                "--recursive",
+                "echo $displaypath",
+            ],
+            cwd=repo,
+        )
+        .strip()
+        .decode()
+    )
+    if len(raw) == 0:
+        return []
+    return raw.split("\n")
+
+
+def build_command(
+    main_repo: str,
+    modules: List[str],
+    commits: List[str],
+    host_repo: str,
+    command: List[str],
+):
+    remote_cwd = "."
+    full_command = []
+    for module, commit in zip(modules, commits):
+        next_remote_cwd = join(host_repo, module)
+        full_command.extend(
+            (
+                f"cd {relpath(next_remote_cwd, remote_cwd)}",
+                f"git checkout --force {commit}",
+            )
+        )
+        remote_cwd = next_remote_cwd
+    if len(command) > 0:
+        cwd_rel = relpath(join(host_repo, relpath(getcwd(), main_repo)), remote_cwd)
+        if cwd_rel != ".":
+            full_command.append(shlex.join(("cd", cwd_rel)))
+        full_command.append(shlex.join(command))
+    return " && ".join(full_command)
+
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument("target")
+    parser.add_argument("--extra-repo", action="append", default=[])
+    args, command = parser.parse_known_args()
+    host, host_repo = args.target.split(":")
+
+    main_repo = get_toplevel(".")
+    repos = [main_repo] + [get_toplevel(path) for path in args.extra_repo]
+    modules = []
+    for repo in repos:
+        for module in ["."] + get_modules(repo):
+            modules.append(relpath(join(repo, module), main_repo))
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = [
+            pool.submit(git_push, args.target, main_repo, module) for module in modules
+        ]
+        wait(futures, return_when=ALL_COMPLETED)
+        commits = [future.result() for future in futures]
+
+    full_command = build_command(main_repo, modules, commits, host_repo, command)
+    print(f"\033[96mRUN@{host}\033[0m {full_command}")
+
+    # Force tty allocation, needed when running from Qt Creator.
+    argv = ["ssh", "-tt", host, full_command]
+    execvp(argv[0], argv)
+
+
+if __name__ == "__main__":
+    main()

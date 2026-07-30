@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import sys
+from os import environ
+from os.path import expanduser, join, relpath
+from subprocess import Popen, check_call, check_output
+
+
+def check_call_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    check_call(argv, **kwargs)
+
+
+def check_output_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    return check_output(argv, **kwargs)
+
+
+def popen_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    return Popen(argv, **kwargs)
+
+
+def main():
+    container, *command = sys.argv[1:]
+    super_root = expanduser("~")
+    working_dir = environ["WORKING_DIR"]
+
+    submodules = [
+        sm
+        for sm in check_output_verbose(
+            ["git", "submodule", "foreach", "--quiet", "echo $sm_path"],
+            cwd=super_root,
+            text=True,
+        ).split()
+        if sm.startswith("src/")
+    ]
+    if working_dir not in submodules:
+        sys.exit(f"working_dir {working_dir!r} not among submodules {submodules}")
+    extra = [sm for sm in submodules if sm != working_dir]
+    files = sorted(
+        file
+        for file in check_output_verbose(
+            ["git", "ls-files", "src/"], cwd=super_root, text=True
+        ).split()
+        if file not in submodules
+    )
+
+    rsync = None
+    if len(files) > 0:
+        rsync = popen_verbose(["rsync", "-aR", *files, f"{container}:"], cwd=super_root)
+    try:
+        check_call_verbose(
+            [
+                "sync-git",
+                *[
+                    f"--extra-repo={relpath(join(super_root, sm), join(super_root, working_dir))}"
+                    for sm in extra
+                ],
+                f"{container}:{working_dir}",
+                *command,
+            ],
+            cwd=join(super_root, working_dir),
+        )
+    finally:
+        if rsync is not None:
+            rsync.wait()
+
+
+if __name__ == "__main__":
+    main()
