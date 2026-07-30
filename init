@@ -43,11 +43,43 @@ class Container:
 
 def main():
     cfg = yaml.safe_load((BASEDIR / "agentic-dev.yml").read_text())
+    project = cfg["project"]
     containers = [
         Container(host=host, name=container, path=container_cfg["path"])
         for host, host_cfg in cfg["hosts"].items()
         for container, container_cfg in host_cfg["containers"].items()
     ]
+
+    # Generate the project-specific compose override.
+    dev_service = {"working_dir": f"/home/user/{project['working_dir']}"}
+    if project.get("kvm"):
+        dev_service["devices"] = ["/dev/kvm"]
+        dev_service["environment"] = {"HOST_KVM_GID": "$KVM_GID"}
+    if project.get("llvm"):
+        dev_service["build"] = {"args": {"LLVM_VERSION": str(project["llvm"])}}
+    (BASEDIR / "dev" / "docker-compose.override.yml").write_text(
+        yaml.safe_dump({"services": {"dev": dev_service}}, sort_keys=False)
+    )
+
+    # Generate the egress allowlist.
+    allow = [
+        r"^archive\.ubuntu\.com$",
+        r"^files\.pythonhosted\.org$",
+        r"^pypi\.org$",
+        r"^security\.ubuntu\.com$",
+        r"^github\.com$",
+        r"^ports\.ubuntu\.com$",
+    ]
+    if project.get("llvm"):
+        allow.append(r"^apt\.llvm\.org$")
+    (BASEDIR / "dev" / "egress" / "allow.txt").write_text(
+        "".join(line + "\n" for line in allow)
+    )
+
+    # Generate the project package list.
+    (BASEDIR / "dev" / "packages.txt").write_text(
+        "".join(pkg + "\n" for pkg in project.get("packages", []))
+    )
 
     # Generate keys.
     agent_ssh = BASEDIR / "agent" / "home" / ".ssh"

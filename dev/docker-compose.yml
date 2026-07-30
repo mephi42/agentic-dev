@@ -1,0 +1,24 @@
+services:
+  dev:
+    build: .
+    environment:
+      HOST_GID: $GID
+      HOST_UID: $UID
+      http_proxy: http://egress:8888
+      https_proxy: http://egress:8888
+    hostname: dev
+    networks: [walled]
+    volumes:
+      - ./home:/home/user
+      - ../src:/home/user/src
+      - $HOME/.cache/ccache:/home/user/.cache/ccache
+      - $HOME/.cache/pip:/home/user/.cache/pip
+    depends_on: [egress]
+  egress:
+    build: ./egress
+    hostname: egress
+    networks: [walled, outside]
+networks:
+  walled:
+    internal: true
+  outside: {}

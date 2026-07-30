@@ -1,0 +1,2 @@
+Acquire::http::Proxy "http://egress:8888";
+Acquire::https::Proxy "http://egress:8888";
