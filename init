@@ -107,7 +107,6 @@ def main():
     for container in containers:
         (container.dev_ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
         (container.dev_ssh / "sshd_config").write_text("""\
-Port 2222
 HostKey /home/user/.ssh/ssh_host_ed25519_key
 SetEnv http_proxy=http://egress:8888 https_proxy=http://egress:8888
 Subsystem sftp internal-sftp
