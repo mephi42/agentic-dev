@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+import subprocess
+import sys
+from dataclasses import dataclass
+from os.path import dirname
+from pathlib import Path
+
+import yaml
+
+BASEDIR = Path(dirname(sys.argv[0]))
+
+
+def check_call_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    subprocess.check_call(argv, **kwargs)
+
+
+def ensure_key(priv: Path):
+    if priv.exists():
+        return
+    priv.parent.mkdir(parents=True, exist_ok=True)
+    check_call_verbose(["ssh-keygen", "-t", "ed25519", "-f", str(priv), "-N", ""])
+
+
+@dataclass
+class Container:
+    host: str
+    name: str
+    path: str
+
+    @property
+    def dev_ssh(self):
+        return BASEDIR / "dev-ssh" / self.name
+
+    @property
+    def host_priv(self):
+        return self.dev_ssh / "ssh_host_ed25519_key"
+
+    @property
+    def host_pub(self):
+        return self.host_priv.with_suffix(".pub")
+
+
+def main():
+    cfg = yaml.safe_load((BASEDIR / "agentic-dev.yml").read_text())
+    containers = [
+        Container(host=host, name=container, path=container_cfg["path"])
+        for host, host_cfg in cfg["hosts"].items()
+        for container, container_cfg in host_cfg["containers"].items()
+    ]
+
+    # Generate keys.
+    agent_ssh = BASEDIR / "agent" / "home" / ".ssh"
+    agent_priv = agent_ssh / "id_ed25519"
+    agent_pub = agent_ssh / "id_ed25519.pub"
+    agent_hosts = agent_ssh / "known_hosts"
+    ensure_key(agent_priv)
+    for container in containers:
+        ensure_key(container.host_priv)
+
+    # Prepare keys for distribution.
+    known_hosts = []
+    for container in containers:
+        (container.dev_ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
+        known_hosts.append(
+            f"{container.name} {container.host_pub.read_text().strip()}\n"
+        )
+    agent_hosts.write_text("".join(known_hosts))
+
+    # Distribute keys.
+    for container in containers:
+        dev = f"{container.path}/dev"
+        check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"])
+        check_call_verbose(
+            [
+                "rsync",
+                "-avz",
+                "--delete",
+                f"{BASEDIR / 'dev'}/",
+                f"{container.host}:{dev}/",
+            ]
+        )
+        check_call_verbose(
+            [
+                "rsync",
+                "-avz",
+                "--delete",
+                f"{container.dev_ssh}/",
+                f"{container.host}:{dev}/home/.ssh/",
+            ]
+        )
+
+
+if __name__ == "__main__":
+    main()
