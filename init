@@ -28,17 +28,26 @@ class Container:
     name: str
     path: str
 
+    # A per-container overlay, rsynced on top of the shared dev tree.
     @property
-    def dev_ssh(self):
-        return BASEDIR / "dev-ssh" / self.name
+    def overlay(self):
+        return BASEDIR / "dev-overlay" / self.name
+
+    @property
+    def ssh(self):
+        return self.overlay / "home" / ".ssh"
 
     @property
     def host_priv(self):
-        return self.dev_ssh / "ssh_host_ed25519_key"
+        return self.ssh / "ssh_host_ed25519_key"
 
     @property
     def host_pub(self):
         return self.host_priv.with_suffix(".pub")
+
+    @property
+    def override(self):
+        return self.overlay / "docker-compose.override.yml"
 
 
 def main():
@@ -50,16 +59,14 @@ def main():
         for container, container_cfg in host_cfg["containers"].items()
     ]
 
-    # Generate the project-specific compose override.
+    # Build the compose override for the dev service. The project name is added
+    # per container below.
     dev_service = {"working_dir": f"/home/user/{project['working_dir']}"}
     if project.get("kvm"):
         dev_service["devices"] = ["/dev/kvm"]
         dev_service["environment"] = {"HOST_KVM_GID": "$KVM_GID"}
     if project.get("llvm"):
         dev_service["build"] = {"args": {"LLVM_VERSION": str(project["llvm"])}}
-    (BASEDIR / "dev" / "docker-compose.override.yml").write_text(
-        yaml.safe_dump({"services": {"dev": dev_service}}, sort_keys=False)
-    )
 
     # Generate the egress allowlist.
     allow = [
@@ -102,21 +109,30 @@ def main():
         )
     )
 
-    # Prepare keys for distribution.
+    # Populate each container's overlay: keys, sshd config, compose override.
     known_hosts = []
     for container in containers:
-        (container.dev_ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
-        (container.dev_ssh / "sshd_config").write_text("""\
+        (container.ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
+        (container.ssh / "sshd_config").write_text("""\
 HostKey /home/user/.ssh/ssh_host_ed25519_key
 SetEnv http_proxy=http://egress:8888 https_proxy=http://egress:8888
 Subsystem sftp internal-sftp
 """)
+        container.override.write_text(
+            yaml.safe_dump(
+                {
+                    "name": f"{project['name']}-{container.name}",
+                    "services": {"dev": dev_service},
+                },
+                sort_keys=False,
+            )
+        )
         known_hosts.append(
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )
     agent_hosts.write_text("".join(known_hosts))
 
-    # Distribute keys.
+    # Distribute the shared dev tree, then layer each container's overlay.
     for container in containers:
         dev = f"{container.path}/dev"
         check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"])
@@ -133,9 +149,8 @@ Subsystem sftp internal-sftp
             [
                 "rsync",
                 "-avz",
-                "--delete",
-                f"{container.dev_ssh}/",
-                f"{container.host}:{dev}/home/.ssh/",
+                f"{container.overlay}/",
+                f"{container.host}:{dev}/",
             ]
         )
 
