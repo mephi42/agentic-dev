@@ -10,8 +10,6 @@ services:
     hostname: agent
     networks: [walled]
     dns: ["0.0.0.0"]
-    extra_hosts:
-      - "egress:10.88.0.2"
     volumes:
       - ./home:/home/user
       - $PROJECT_DIR/src:/home/user/src
@@ -25,12 +23,10 @@ services:
     hostname: egress
     networks:
       walled:
-        ipv4_address: 10.88.0.2
+        driver_opts:
+          com.docker.network.endpoint.ifname: walled0
       outside: {}
 networks:
   walled:
     internal: true
-    ipam:
-      config:
-        - subnet: 10.88.0.0/24
   outside: {}
