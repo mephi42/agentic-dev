@@ -8,6 +8,9 @@ services:
       https_proxy: http://egress:8888
     hostname: dev
     networks: [walled]
+    dns: ["0.0.0.0"]
+    extra_hosts:
+      - "egress:10.88.0.2"
     volumes:
       - ./home:/home/user
       - ../src:/home/user/src
@@ -17,8 +20,14 @@ services:
   egress:
     build: ./egress
     hostname: egress
-    networks: [walled, outside]
+    networks:
+      walled:
+        ipv4_address: 10.88.0.2
+      outside: {}
 networks:
   walled:
     internal: true
+    ipam:
+      config:
+        - subnet: 10.88.0.0/24
   outside: {}
