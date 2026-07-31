@@ -28,6 +28,7 @@ def main():
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
     env = {
         **environ,
+        "COMPOSE_PROJECT_NAME": f"{cfg['project']['name']}-agent",
         "UID": str(getuid()),
         "GID": str(getgid()),
         "PROJECT_DIR": str(project_dir.resolve()),
