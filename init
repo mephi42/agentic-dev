@@ -175,6 +175,9 @@ Subsystem sftp internal-sftp
             ]
         )
 
+    for command in project.get("post-init", []):
+        check_call_verbose(command, shell=True, cwd=BASEDIR)
+
 
 if __name__ == "__main__":
     main()
