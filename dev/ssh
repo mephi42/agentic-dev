@@ -1,0 +1,9 @@
+#!/bin/sh
+# Connect to the local dev container via SSH.
+set -eu
+dir=$(cd -- "$(dirname -- "$0")" && pwd)
+exec ssh \
+    -o "ProxyCommand=socat - UNIX-CONNECT:$dir/home/.ssh/sshd.sock" \
+    -o "UserKnownHostsFile=$dir/home/.ssh/known_hosts" \
+    -i "$dir/home/.ssh/id_ed25519" \
+    user@dev "$@"

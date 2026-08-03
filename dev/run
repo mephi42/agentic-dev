@@ -1,10 +1,74 @@
-#!/bin/sh
-set -e -u -x
-cd "$(dirname "$0")"
-if [ -e /dev/kvm ]; then
-	KVM_ENV="KVM_GID=$(stat -c %g /dev/kvm)"
-else
-	KVM_ENV=
-fi
-exec env UID="$(id -u)" GID="$(id -g)" $KVM_ENV \
-	docker compose run --build --remove-orphans dev
+#!/usr/bin/env python3
+import sys
+from os import environ, getgid, getuid
+from os.path import exists
+from pathlib import Path
+from subprocess import Popen, call, check_call, check_output
+
+import yaml
+
+
+def call_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    return call(argv, **kwargs)
+
+
+def check_call_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    check_call(argv, **kwargs)
+
+
+def popen_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    return Popen(argv, **kwargs)
+
+
+def main():
+    dev_dir = Path(sys.argv[0]).parent
+    env = {
+        **environ,
+        "UID": str(getuid()),
+        "GID": str(getgid()),
+    }
+    if exists("/dev/kvm"):
+        env["KVM_GID"] = str(Path("/dev/kvm").stat().st_gid)
+
+    peers = yaml.safe_load((dev_dir / "tunnels.yml").read_text())
+
+    tunnels = []
+    try:
+        for peer in peers:
+            remote_home = check_output(["ssh", peer["host"], "pwd"], text=True).strip()
+            local_sock = dev_dir / "home" / ".ssh" / f"sshd-{peer['name']}.sock"
+            remote_sock = f"{remote_home}/{peer['path']}/dev/home/.ssh/sshd.sock"
+            tunnels.append(
+                popen_verbose(
+                    [
+                        "autossh",
+                        "-o",
+                        "StreamLocalBindUnlink=yes",
+                        "-L",
+                        f"{local_sock}:{remote_sock}",
+                        "-N",
+                        peer["host"],
+                    ]
+                )
+            )
+        status = call_verbose(
+            ["docker", "compose", "run", "--build", "--remove-orphans", "dev"],
+            cwd=dev_dir,
+            env=env,
+        )
+    finally:
+        for tunnel in tunnels:
+            tunnel.terminate()
+        check_call_verbose(
+            ["docker", "compose", "down"],
+            cwd=dev_dir,
+            env=env,
+        )
+    sys.exit(status)
+
+
+if __name__ == "__main__":
+    main()

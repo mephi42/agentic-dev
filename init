@@ -24,6 +24,16 @@ def ensure_key(priv: Path, comment: str):
     )
 
 
+def ssh_client_config(names):
+    """An ssh client config reaching each named container over its socket."""
+    return "\n".join(
+        f"Host {name}\n"
+        f"    ProxyCommand socat - UNIX-CONNECT:/home/user/.ssh/sshd-{name}.sock\n"
+        f"    User user\n"
+        for name in names
+    )
+
+
 @dataclass
 class Container:
     host: str
@@ -58,6 +68,10 @@ class Container:
     @property
     def override(self):
         return self.overlay / "docker-compose.override.yml"
+
+    @property
+    def tunnels(self):
+        return self.overlay / "tunnels.yml"
 
 
 def main():
@@ -109,30 +123,27 @@ def main():
         ensure_key(container.host_priv, comment=f"{container.name}-host")
         ensure_key(container.client_priv, comment=f"{container.name}-client")
 
-    # Generate ssh client config.
-    agent_config.write_text(
-        "\n".join(
-            f"Host {container.name}\n"
-            f"    ProxyCommand socat - "
-            f"UNIX-CONNECT:/home/user/.ssh/sshd-{container.name}.sock\n"
-            f"    User user\n"
-            for container in containers
-        )
-    )
+    # Generate the agent's ssh client config, reaching every container.
+    agent_config.write_text(ssh_client_config(c.name for c in containers))
 
     # Populate each container's overlay: keys, sshd config, compose override.
-    # Authorize the agent and all peer containers, trust every peer's host key.
+    # Authorize the agent and all containers (self included, so dev/ssh can log
+    # in locally); trust the local (dev) and every peer's host key.
     known_hosts = []
     for container in containers:
         peers = [c for c in containers if c is not container]
         (container.ssh / "authorized_keys").write_bytes(
             agent_pub.read_bytes()
-            + b"".join(peer.client_pub.read_bytes() for peer in peers)
+            + b"".join(c.client_pub.read_bytes() for c in containers)
         )
         (container.ssh / "known_hosts").write_text(
-            "".join(
+            f"dev {container.host_pub.read_text().strip()}\n"
+            + "".join(
                 f"{peer.name} {peer.host_pub.read_text().strip()}\n" for peer in peers
             )
+        )
+        (container.ssh / "config").write_text(
+            ssh_client_config(peer.name for peer in peers)
         )
         (container.ssh / "sshd_config").write_text("""\
 HostKey /home/user/.ssh/ssh_host_ed25519_key
@@ -145,6 +156,15 @@ Subsystem sftp internal-sftp
                     "name": f"{project['name']}-{container.name}",
                     "services": {"dev": dev_service},
                 },
+                sort_keys=False,
+            )
+        )
+        container.tunnels.write_text(
+            yaml.safe_dump(
+                [
+                    {"name": peer.name, "host": peer.host, "path": peer.path}
+                    for peer in peers
+                ],
                 sort_keys=False,
             )
         )
