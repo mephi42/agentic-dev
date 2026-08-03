@@ -15,11 +15,13 @@ def check_call_verbose(argv, **kwargs):
     check_call(argv, **kwargs)
 
 
-def ensure_key(priv: Path):
+def ensure_key(priv: Path, comment: str):
     if priv.exists():
         return
     priv.parent.mkdir(parents=True, exist_ok=True)
-    check_call_verbose(["ssh-keygen", "-t", "ed25519", "-f", str(priv), "-N", ""])
+    check_call_verbose(
+        ["ssh-keygen", "-t", "ed25519", "-f", str(priv), "-N", "", "-C", comment]
+    )
 
 
 @dataclass
@@ -28,9 +30,9 @@ class Container:
     name: str
     path: str
 
-    # A per-container overlay, rsynced on top of the shared dev tree.
     @property
     def overlay(self):
+        """A per-container overlay, rsynced on top of the shared dev tree"""
         return BASEDIR / "dev-overlay" / self.name
 
     @property
@@ -44,6 +46,14 @@ class Container:
     @property
     def host_pub(self):
         return self.host_priv.with_suffix(".pub")
+
+    @property
+    def client_priv(self):
+        return self.ssh / "id_ed25519"
+
+    @property
+    def client_pub(self):
+        return self.client_priv.with_suffix(".pub")
 
     @property
     def override(self):
@@ -94,9 +104,10 @@ def main():
     agent_pub = agent_ssh / "id_ed25519.pub"
     agent_hosts = agent_ssh / "known_hosts"
     agent_config = agent_ssh / "config"
-    ensure_key(agent_priv)
+    ensure_key(agent_priv, comment="agent")
     for container in containers:
-        ensure_key(container.host_priv)
+        ensure_key(container.host_priv, comment=f"{container.name}-host")
+        ensure_key(container.client_priv, comment=f"{container.name}-client")
 
     # Generate ssh client config.
     agent_config.write_text(
@@ -110,9 +121,19 @@ def main():
     )
 
     # Populate each container's overlay: keys, sshd config, compose override.
+    # Authorize the agent and all peer containers, trust every peer's host key.
     known_hosts = []
     for container in containers:
-        (container.ssh / "authorized_keys").write_bytes(agent_pub.read_bytes())
+        peers = [c for c in containers if c is not container]
+        (container.ssh / "authorized_keys").write_bytes(
+            agent_pub.read_bytes()
+            + b"".join(peer.client_pub.read_bytes() for peer in peers)
+        )
+        (container.ssh / "known_hosts").write_text(
+            "".join(
+                f"{peer.name} {peer.host_pub.read_text().strip()}\n" for peer in peers
+            )
+        )
         (container.ssh / "sshd_config").write_text("""\
 HostKey /home/user/.ssh/ssh_host_ed25519_key
 SetEnv http_proxy=http://egress:8888 https_proxy=http://egress:8888
