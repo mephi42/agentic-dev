@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
         socat \
         ssh
 COPY --from=claude /claude /usr/bin/claude
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-COPY docker-entrypoint-user.sh /docker-entrypoint-user.sh
+COPY --from=common docker-entrypoint.sh /docker-entrypoint.sh
+COPY --from=common docker-entrypoint-user.sh /docker-entrypoint-user.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/bash"]

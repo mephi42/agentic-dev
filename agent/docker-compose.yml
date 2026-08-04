@@ -1,6 +1,5 @@
 services:
   agent:
-    build: .
     environment:
       HOST_GID: $GID
       HOST_UID: $UID
