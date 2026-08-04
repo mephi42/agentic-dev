@@ -33,34 +33,33 @@ def main():
     if exists("/dev/kvm"):
         env["KVM_GID"] = str(Path("/dev/kvm").stat().st_gid)
 
-    peers = yaml.safe_load((dev_dir / "tunnels.yml").read_text())
+    hosts = yaml.safe_load((dev_dir / "tunnels.yml").read_text())
 
     tunnels = []
     try:
-        for peer in peers:
-            remote_home = check_output(["ssh", peer["host"], "pwd"], text=True).strip()
-            local_sock = dev_dir / "home" / ".ssh" / f"sshd-{peer['name']}.sock"
-            remote_sock = f"{remote_home}/{peer['path']}/dev/home/.ssh/sshd.sock"
-            tunnels.append(
-                popen_verbose(
-                    [
-                        "autossh",
-                        "-M",
-                        "0",
-                        "-o",
-                        "ServerAliveInterval=30",
-                        "-o",
-                        "ServerAliveCountMax=3",
-                        "-o",
-                        "StreamLocalBindUnlink=yes",
-                        "-L",
-                        f"{local_sock}:{remote_sock}",
-                        "-N",
-                        peer["host"],
-                    ],
-                    stdin=DEVNULL,
+        for host, containers in hosts.items():
+            remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
+            tunnel_args = [
+                "autossh",
+                "-M",
+                "0",
+                "-o",
+                "ServerAliveInterval=30",
+                "-o",
+                "ServerAliveCountMax=3",
+                "-o",
+                "StreamLocalBindUnlink=yes",
+            ]
+            for container in containers:
+                local_sock = (
+                    dev_dir / "home" / ".ssh" / f"sshd-{container['name']}.sock"
                 )
-            )
+                remote_sock = (
+                    f"{remote_home}/{container['path']}/dev/home/.ssh/sshd.sock"
+                )
+                tunnel_args.extend(["-L", f"{local_sock}:{remote_sock}"])
+            tunnel_args.extend(["-N", host])
+            tunnels.append(popen_verbose(tunnel_args, stdin=DEVNULL))
         status = call_verbose(
             ["docker", "compose", "run", "--build", "--remove-orphans", "dev"],
             cwd=dev_dir,

@@ -159,15 +159,12 @@ Subsystem sftp internal-sftp
                 sort_keys=False,
             )
         )
-        container.tunnels.write_text(
-            yaml.safe_dump(
-                [
-                    {"name": peer.name, "host": peer.host, "path": peer.path}
-                    for peer in peers
-                ],
-                sort_keys=False,
+        tunnels_by_host = {}
+        for peer in peers:
+            tunnels_by_host.setdefault(peer.host, []).append(
+                {"name": peer.name, "path": peer.path}
             )
-        )
+        container.tunnels.write_text(yaml.safe_dump(tunnels_by_host, sort_keys=False))
         known_hosts.append(
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )
