@@ -1,4 +1,5 @@
-FROM ubuntu:24.04
+ARG BASE_IMAGE=
+FROM ${BASE_IMAGE:-ubuntu:24.04}
 ARG LLVM_VERSION=
 RUN if [ -n "$LLVM_VERSION" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \

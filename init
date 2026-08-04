@@ -89,8 +89,12 @@ def main():
     if project.get("kvm"):
         dev_service["devices"] = ["/dev/kvm"]
         dev_service["environment"] = {"HOST_KVM_GID": "$KVM_GID"}
-    if project.get("llvm"):
-        dev_service["build"] = {"args": {"LLVM_VERSION": str(project["llvm"])}}
+    dev_service["build"] = {
+        "args": {
+            "BASE_IMAGE": project.get("base_image", ""),
+            "LLVM_VERSION": str(project.get("llvm", "")),
+        }
+    }
 
     # Generate the egress allowlist.
     allow = [
