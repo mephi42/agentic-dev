@@ -4,15 +4,8 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s 2.1.211
 RUN mv /root/.local/share/claude/versions/2.1.211 /claude
 
 FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y \
-        clang-format \
-        git \
-        make \
-        psmisc \
-        python3 \
-        rsync \
-        socat \
-        ssh
+RUN --mount=type=bind,from=common,source=packages.txt,target=/tmp/packages.txt \
+    apt-get update && xargs apt-get install -y </tmp/packages.txt
 COPY --from=claude /claude /usr/bin/claude
 COPY --from=common docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=common docker-entrypoint-user.sh /docker-entrypoint-user.sh
