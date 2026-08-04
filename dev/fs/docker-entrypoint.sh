@@ -8,7 +8,9 @@ if ent=$(getent group "$HOST_GID"); then
 fi
 groupadd -g "$HOST_GID" group
 if [ -n "${HOST_KVM_GID:-}" ]; then
-    groupadd -g "$HOST_KVM_GID" kvm || groupmod -g "$HOST_KVM_GID" kvm
+    groupadd -g "$HOST_KVM_GID" kvm ||
+        groupmod -g "$HOST_KVM_GID" kvm ||
+        getent group "$HOST_KVM_GID" >/dev/null
     useradd -g "$HOST_GID" -G "$HOST_KVM_GID" -m -s /bin/bash -u "$HOST_UID" user
 else
     useradd -g "$HOST_GID" -m -s /bin/bash -u "$HOST_UID" user
