@@ -45,6 +45,12 @@ def main():
                 popen_verbose(
                     [
                         "autossh",
+                        "-M",
+                        "0",
+                        "-o",
+                        "ServerAliveInterval=30",
+                        "-o",
+                        "ServerAliveCountMax=3",
                         "-o",
                         "StreamLocalBindUnlink=yes",
                         "-L",

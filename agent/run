@@ -63,6 +63,12 @@ def main():
             remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
             tunnel_args = [
                 "autossh",
+                "-M",
+                "0",
+                "-o",
+                "ServerAliveInterval=30",
+                "-o",
+                "ServerAliveCountMax=3",
                 "-o",
                 "StreamLocalBindUnlink=yes",
             ]
