@@ -3,7 +3,7 @@ import sys
 from os import environ, getgid, getuid
 from os.path import exists
 from pathlib import Path
-from subprocess import Popen, call, check_call, check_output
+from subprocess import DEVNULL, Popen, call, check_call, check_output
 
 import yaml
 
@@ -57,7 +57,8 @@ def main():
                         f"{local_sock}:{remote_sock}",
                         "-N",
                         peer["host"],
-                    ]
+                    ],
+                    stdin=DEVNULL,
                 )
             )
         status = call_verbose(

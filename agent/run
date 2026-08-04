@@ -2,7 +2,7 @@
 import sys
 from os import environ, getgid, getuid
 from pathlib import Path
-from subprocess import Popen, call, check_call, check_output
+from subprocess import DEVNULL, Popen, call, check_call, check_output
 
 import yaml
 
@@ -78,7 +78,7 @@ def main():
                 remote_sock = f"{remote_home}/{path}/dev/home/.ssh/sshd.sock"
                 tunnel_args.extend(["-L", f"{local_sock}:{remote_sock}"])
             tunnel_args.extend(["-N", host])
-            tunnels.append(popen_verbose(tunnel_args))
+            tunnels.append(popen_verbose(tunnel_args, stdin=DEVNULL))
         status = call_verbose(
             ["docker", "compose", "run", "--build", "--remove-orphans", "agent"],
             cwd=agent_dir,
