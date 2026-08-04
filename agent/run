@@ -60,24 +60,19 @@ def main():
     tunnels = []
     try:
         for host, host_cfg in cfg["hosts"].items():
+            remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
+            tunnel_args = [
+                "autossh",
+                "-o",
+                "StreamLocalBindUnlink=yes",
+            ]
             for name, container_cfg in host_cfg["containers"].items():
                 path = container_cfg["path"]
-                remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
                 local_sock = agent_dir / "home" / ".ssh" / f"sshd-{name}.sock"
                 remote_sock = f"{remote_home}/{path}/dev/home/.ssh/sshd.sock"
-                tunnels.append(
-                    popen_verbose(
-                        [
-                            "autossh",
-                            "-o",
-                            "StreamLocalBindUnlink=yes",
-                            "-L",
-                            f"{local_sock}:{remote_sock}",
-                            "-N",
-                            host,
-                        ]
-                    )
-                )
+                tunnel_args.extend(["-L", f"{local_sock}:{remote_sock}"])
+            tunnel_args.extend(["-N", host])
+            tunnels.append(popen_verbose(tunnel_args))
         status = call_verbose(
             ["docker", "compose", "run", "--build", "--remove-orphans", "agent"],
             cwd=agent_dir,
