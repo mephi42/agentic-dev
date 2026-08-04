@@ -14,7 +14,6 @@ services:
       - $PROJECT_DIR/src:/home/user/src
       - $PROJECT_DIR/.git:/home/user/.git
       - $PROJECT_DIR/.gitmodules:/home/user/.gitmodules
-      - $PROJECT_DIR/CLAUDE.md:/home/user/CLAUDE.md
     working_dir: /home/user/$WORKING_DIR
     depends_on: [egress]
   egress:
