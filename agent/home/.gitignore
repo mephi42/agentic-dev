@@ -8,4 +8,5 @@
 /.local/state/
 /src/
 /.gitmodules
+/AGENTS.md
 /CLAUDE.md
