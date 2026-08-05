@@ -87,14 +87,21 @@ def main():
     # per container below.
     dev_service = {"working_dir": f"/home/user/{project['working_dir']}"}
     if project.get("kvm"):
-        dev_service["devices"] = ["/dev/kvm"]
-        dev_service["environment"] = {"HOST_KVM_GID": "$KVM_GID"}
-    dev_service["build"] = {
-        "args": {
+        dev_service.setdefault("devices", []).append("/dev/kvm")
+        dev_service.setdefault("environment", {})["HOST_KVM_GID"] = "$KVM_GID"
+    if project.get("tracing"):
+        dev_service.setdefault("cap_add", []).extend(
+            ["CAP_BPF", "CAP_PERFMON", "CAP_SYS_RESOURCE"]
+        )
+        dev_service.setdefault("volumes", []).append(
+            "/sys/kernel/tracing:/sys/kernel/tracing"
+        )
+    dev_service.setdefault("build", {}).setdefault("args", {}).update(
+        {
             "BASE_IMAGE": project.get("base_image", ""),
             "LLVM_VERSION": str(project.get("llvm", "")),
         }
-    }
+    )
 
     # Generate the egress allowlist.
     allow = [
