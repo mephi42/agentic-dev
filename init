@@ -191,6 +191,8 @@ Subsystem sftp internal-sftp
                 "rsync",
                 "-avz",
                 "--delete",
+                "--filter=protect /home/.cache/ccache",
+                "--filter=protect /home/.cache/pip",
                 f"{BASEDIR / 'dev'}/",
                 f"{container.host}:{dev}/",
             ]

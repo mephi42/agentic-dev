@@ -12,8 +12,6 @@ services:
     volumes:
       - ./home:/home/user
       - ../src:/home/user/src
-      - $HOME/.cache/ccache:/home/user/.cache/ccache
-      - $HOME/.cache/pip:/home/user/.cache/pip
     depends_on: [egress]
   egress:
     build: ./egress
