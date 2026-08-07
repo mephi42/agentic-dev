@@ -6,3 +6,4 @@ python3
 rsync
 socat
 ssh
+tmux

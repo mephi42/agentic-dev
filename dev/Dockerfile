@@ -31,6 +31,7 @@ RUN --mount=type=bind,source=packages.txt,target=/tmp/packages.txt \
         rsync \
         socat \
         sudo \
+        tmux \
         </tmp/packages.txt
 COPY fs/ /
 ENTRYPOINT ["/docker-entrypoint.sh"]
