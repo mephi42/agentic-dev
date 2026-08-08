@@ -1,0 +1,17 @@
+project:
+  name: <myproject>           # docker-compose project name
+  working_dir: src            # cwd for the agent and dev containers
+  #agent: claude              # agent to run (default: claude)
+  #kvm: true                  # expose /dev/kvm to dev containers
+  #llvm: 22                   # install this LLVM version from apt.llvm.org
+  #rust: 1.97.1               # install this Rust version
+  #packages:                  # extra apt packages for the dev image
+  #  - build-essential
+  #  - gdb
+  #post-init:                 # shell commands to run locally after init
+  #  - echo 🎉
+hosts:
+  <host ssh alias>:           # you must configure host ssh to understand this
+    containers:
+      <container ssh alias>:  # will be created automatically for use by agent
+        path: <myproject>     # path for container files on the remote host

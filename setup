@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+import argparse
+import shutil
+import sys
+from pathlib import Path
+from subprocess import check_call, check_output
+
+AGENTIC_DEV = Path(__file__).resolve().parent
+TEMPLATE = AGENTIC_DEV / "template"
+
+
+def check_call_verbose(argv, **kwargs):
+    print("+", " ".join(map(str, argv)), file=sys.stderr)
+    check_call(argv, **kwargs)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Set up a new project: create a git repo with the initial "
+        "layout and an agentic-dev submodule in <dir>."
+    )
+    parser.add_argument(
+        "dir", type=Path, help="project directory to create (must not exist)"
+    )
+    project = parser.parse_args().dir
+    if project.exists():
+        sys.exit(f"{project} already exists")
+    check_call_verbose(["git", "init", project])
+
+    check_call_verbose(
+        [
+            "git",
+            "-C",
+            project,
+            "-c",
+            "protocol.file.allow=always",
+            "submodule",
+            "add",
+            AGENTIC_DEV,
+            "agentic-dev",
+        ]
+    )
+    origin = check_output(
+        ["git", "-C", AGENTIC_DEV, "remote", "get-url", "origin"], text=True
+    ).strip()
+    check_call_verbose(
+        [
+            "git",
+            "-C",
+            project,
+            "config",
+            "-f",
+            ".gitmodules",
+            "submodule.agentic-dev.url",
+            origin,
+        ]
+    )
+    check_call_verbose(["git", "-C", project, "submodule", "sync"])
+
+    print("+", "copy", f"{TEMPLATE}/* -> {project}", file=sys.stderr)
+    shutil.copytree(TEMPLATE, project, symlinks=True, dirs_exist_ok=True)
+
+    check_call_verbose(["git", "-C", project, "add", "-A"])
+
+    print(
+        f"\nCreated {project}. Next steps:\n"
+        f"  1. Edit {project}/agentic-dev.yml\n"
+        f"  2. Put your source tree under {project}/src\n"
+        f"  3. Run {project}/init\n"
+        "  4. Start dev containers on the remote hosts\n"
+        f"  5. Run {project}/agent/run\n"
+    )
+
+
+if __name__ == "__main__":
+    main()
