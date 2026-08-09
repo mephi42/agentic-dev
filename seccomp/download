@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e -u -x
+curl "https://raw.githubusercontent.com/moby/profiles/refs/tags/seccomp/v0.2.3/seccomp/default.json" \
+	>"$(dirname "$0")"/default.json
