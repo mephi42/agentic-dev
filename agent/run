@@ -38,7 +38,7 @@ def main():
         "UID": str(getuid()),
         "GID": str(getgid()),
         "PROJECT_DIR": str(project_dir.resolve()),
-        "WORKING_DIR": cfg["project"]["working_dir"],
+        "WORKING_DIR": cfg["project"]["working-dir"],
     }
     tunnels = []
     try:

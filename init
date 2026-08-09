@@ -85,7 +85,7 @@ def main():
 
     # Build the compose override for the dev service. The project name is added
     # per container below.
-    dev_service = {"working_dir": f"/home/user/{project['working_dir']}"}
+    dev_service = {"working_dir": f"/home/user/{project['working-dir']}"}
     if project.get("kvm"):
         dev_service.setdefault("devices", []).append("/dev/kvm")
         dev_service.setdefault("environment", {})["HOST_KVM_GID"] = "$KVM_GID"
