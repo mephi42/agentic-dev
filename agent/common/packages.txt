@@ -1,6 +1,7 @@
 clang-format
 git
 make
+poppler-utils
 psmisc
 python3
 rsync
