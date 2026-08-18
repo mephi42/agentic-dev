@@ -7,3 +7,4 @@ rsync
 socat
 ssh
 tmux
+vim
