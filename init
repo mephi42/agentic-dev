@@ -116,6 +116,14 @@ def main():
     ]
     if project.get("llvm"):
         allow.append(r"^apt\.llvm\.org$")
+    if project.get("rust"):
+        allow.extend(
+            [
+                r"^index\.crates\.io$",
+                r"^static\.crates\.io$",
+                r"^crates\.io$",
+            ]
+        )
     (BASEDIR / "dev" / "egress" / "allow.txt").write_text(
         "".join(line + "\n" for line in allow)
     )
