@@ -3,6 +3,7 @@ project:
   working-dir: src            # cwd for the agent and dev containers
   #agent: claude              # agent to run (default: claude)
   #kvm: true                  # expose /dev/kvm to dev containers
+  #base-image: ubuntu:24.04   # base image for the dev image (default: ubuntu:24.04)
   #llvm: 22                   # install this LLVM version from apt.llvm.org
   #rust: 1.97.1               # install this Rust version
   #packages:                  # extra apt packages for the dev image

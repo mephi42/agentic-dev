@@ -99,7 +99,7 @@ def main():
         )
     dev_service.setdefault("build", {}).setdefault("args", {}).update(
         {
-            "BASE_IMAGE": project.get("base_image", ""),
+            "BASE_IMAGE": project.get("base-image", ""),
             "LLVM_VERSION": str(project.get("llvm", "")),
             "RUST_VERSION": str(project.get("rust", "")),
         }
