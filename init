@@ -71,6 +71,7 @@ class Container:
     name: str
     path: str
     packages: List[str]
+    post_install: List[str]
 
     @property
     def overlay(self):
@@ -115,6 +116,7 @@ def main():
             name=container,
             path=container_cfg["path"],
             packages=container_cfg.get("packages", []),
+            post_install=container_cfg.get("post-install", []),
         )
         for host, host_cfg in cfg["hosts"].items()
         for container, container_cfg in host_cfg["containers"].items()
@@ -232,6 +234,14 @@ def main():
         (container.overlay / "packages.txt").write_text(
             "".join(
                 pkg + "\n" for pkg in project.get("packages", []) + container.packages
+            )
+        )
+        # Shell commands run in the dev image once the packages are installed:
+        # project-wide first, then this container's.
+        (container.overlay / "post-install.sh").write_text(
+            "".join(
+                cmd + "\n"
+                for cmd in project.get("post-install", []) + container.post_install
             )
         )
         known_hosts.append(

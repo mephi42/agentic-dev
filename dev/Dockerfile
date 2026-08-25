@@ -33,6 +33,8 @@ RUN --mount=type=bind,source=packages.txt,target=/tmp/packages.txt \
         sudo \
         tmux \
         </tmp/packages.txt
+RUN --mount=type=bind,source=post-install.sh,target=/tmp/post-install.sh \
+    sh -e -x /tmp/post-install.sh
 COPY fs/ /
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/bash"]

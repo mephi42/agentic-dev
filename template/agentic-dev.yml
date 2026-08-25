@@ -9,6 +9,8 @@ project:
   #packages:                  # extra apt packages for the dev image
   #  - build-essential
   #  - gdb
+  #post-install:              # shell commands to run as root in the dev image,
+  #  - locale-gen en_US.UTF-8   after the packages are installed
   #post-init:                 # shell commands to run locally after init
   #  - echo 🎉
 hosts:
@@ -18,3 +20,5 @@ hosts:
         path: <myproject>     # path for container files on the remote host
         #packages:            # extra apt packages, for this container only
         #  - libxen-dev
+        #post-install:        # extra post-install commands, this container only
+        #  - locale-gen en_US.UTF-8
