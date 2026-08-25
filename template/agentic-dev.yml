@@ -16,3 +16,5 @@ hosts:
     containers:
       <container ssh alias>:  # will be created automatically for use by agent
         path: <myproject>     # path for container files on the remote host
+        #packages:            # extra apt packages, for this container only
+        #  - libxen-dev
