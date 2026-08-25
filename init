@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import json
+import shlex
 import sys
 from dataclasses import dataclass
 from os.path import dirname
 from pathlib import Path
-from subprocess import check_call
+from subprocess import check_call, check_output
 
 import yaml
 
@@ -14,6 +15,34 @@ BASEDIR = Path(dirname(sys.argv[0]))
 def check_call_verbose(argv, **kwargs):
     print("+", argv, file=sys.stderr)
     check_call(argv, **kwargs)
+
+
+def check_output_verbose(argv, **kwargs):
+    print("+", argv, file=sys.stderr)
+    return check_output(argv, **kwargs)
+
+
+def source_repos(super_root: Path):
+    """(path, url) for every checked-out src/ submodule of the superproject.
+
+    NUL-separated fields, so that whitespace in a path or a URL survives.
+    """
+    fields = check_output_verbose(
+        [
+            "git",
+            "submodule",
+            "foreach",
+            "--quiet",
+            'printf "%s\\0%s\\0" "$sm_path" "$(git config remote.origin.url)"',
+        ],
+        cwd=super_root,
+        text=True,
+    ).split("\0")[:-1]
+    return [
+        (path, url)
+        for path, url in zip(fields[::2], fields[1::2])
+        if path.startswith("src/")
+    ]
 
 
 def ensure_key(priv: Path, comment: str):
@@ -201,6 +230,24 @@ def main():
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )
     agent_hosts.write_text("".join(known_hosts))
+
+    # Clone the source repos on each host, unless they are already there. A
+    # dev container mounts <path>/src as ~/src, which is what sync-git pushes
+    # into; cloning from upstream is far cheaper than letting sync-git create
+    # an empty repo and push the whole history into it over the tunnel.
+    repos = source_repos(BASEDIR)
+    for container in containers:
+        clone = []
+        for path, url in repos:
+            # && and || have equal precedence, so each repo needs its own
+            # subshell: otherwise a failed clone falls through to the next.
+            dest = shlex.quote(f"{container.path}/{path}")
+            clone.append(
+                f"(git -C {dest} rev-parse --git-dir >/dev/null 2>&1 || "
+                f"git clone {shlex.quote(url)} {dest})"
+            )
+        if len(clone) > 0:
+            check_call_verbose(["ssh", container.host, " && ".join(clone)])
 
     # Distribute the shared dev tree, then layer each container's overlay.
     for container in containers:
