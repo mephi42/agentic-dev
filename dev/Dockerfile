@@ -9,7 +9,9 @@ RUN if [ -n "$LLVM_VERSION" ]; then \
             lsb-release \
             software-properties-common \
             wget && \
-        curl -sSf https://apt.llvm.org/llvm.sh | bash -s -- "$LLVM_VERSION"; \
+        curl -sSf https://apt.llvm.org/llvm.sh | bash -s -- "$LLVM_VERSION" && \
+        echo "PATH=/usr/lib/llvm-$LLVM_VERSION/bin:\$PATH" \
+            >/etc/profile.d/llvm.sh; \
     fi
 ARG RUST_VERSION=
 RUN if [ -n "$RUST_VERSION" ]; then \
