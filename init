@@ -151,6 +151,7 @@ def main():
         r"^security\.ubuntu\.com$",
         r"^github\.com$",
         r"^ports\.ubuntu\.com$",
+        r"^gitlab\.com$",
     ]
     if project.get("llvm"):
         allow.append(r"^apt\.llvm\.org$")
