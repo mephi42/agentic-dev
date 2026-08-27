@@ -140,8 +140,13 @@ def main():
             "BASE_IMAGE": project.get("base-image", ""),
             "LLVM_VERSION": str(project.get("llvm", "")),
             "RUST_VERSION": str(project.get("rust", "")),
+            "CCACHE_MAXSIZE": str(project.get("ccache", "")),
         }
     )
+
+    project_packages = list(project.get("packages", []))
+    if project.get("ccache"):
+        project_packages.append("ccache")
 
     # Generate the egress allowlist.
     allow = [
@@ -233,9 +238,7 @@ def main():
         container.tunnels.write_text(yaml.safe_dump(tunnels_by_host, sort_keys=False))
         # The apt package list: project-wide packages plus this container's.
         (container.overlay / "packages.txt").write_text(
-            "".join(
-                pkg + "\n" for pkg in project.get("packages", []) + container.packages
-            )
+            "".join(pkg + "\n" for pkg in project_packages + container.packages)
         )
         # Shell commands run in the dev image once the packages are installed:
         # project-wide first, then this container's.

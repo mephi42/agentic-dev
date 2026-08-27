@@ -3,6 +3,9 @@ set -e -u -x
 if [ -f /etc/profile.d/llvm.sh ]; then
     . /etc/profile.d/llvm.sh
 fi
+if [ -f /etc/profile.d/ccache.sh ]; then
+    . /etc/profile.d/ccache.sh
+fi
 mkdir -p /home/user/.ssh/sshd_config.d
 echo "SetEnv PATH=$PATH http_proxy=$http_proxy https_proxy=$https_proxy" \
     >/home/user/.ssh/sshd_config.d/env.conf

@@ -35,6 +35,16 @@ RUN --mount=type=bind,source=packages.txt,target=/tmp/packages.txt \
         sudo \
         tmux \
         </tmp/packages.txt
+ARG CCACHE_MAXSIZE=
+RUN if [ -n "$CCACHE_MAXSIZE" ]; then \
+        if [ -n "$LLVM_VERSION" ]; then \
+            for cc in clang clang++; do \
+                ln -sf ../../bin/ccache "/usr/lib/ccache/$cc"; \
+            done; \
+        fi && \
+        echo "max_size = $CCACHE_MAXSIZE" >/etc/ccache.conf && \
+        echo "PATH=/usr/lib/ccache:\$PATH" >/etc/profile.d/ccache.sh; \
+    fi
 RUN --mount=type=bind,source=post-install.sh,target=/tmp/post-install.sh \
     sh -e -x /tmp/post-install.sh
 COPY fs/ /

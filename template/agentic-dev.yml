@@ -6,6 +6,7 @@ project:
   #base-image: ubuntu:24.04   # base image for the dev image (default: ubuntu:24.04)
   #llvm: 22                   # install this LLVM version from apt.llvm.org
   #rust: 1.97.1               # install this Rust version
+  #ccache: 100G               # install ccache with this max cache size
   #packages:                  # extra apt packages for the dev image
   #  - build-essential
   #  - gdb
