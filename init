@@ -291,6 +291,7 @@ def main():
                 f"{container.host}:{dev}/",
             ]
         )
+        check_call_verbose(["ssh", container.host, f"cd {shlex.quote(dev)} && ./run"])
 
     for command in project.get("post-init", []):
         check_call_verbose(command, shell=True, cwd=BASEDIR)

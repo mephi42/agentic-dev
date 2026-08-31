@@ -1,11 +1,13 @@
 services:
   dev:
     build: .
+    command: ["sleep", "infinity"]
     environment:
       HOST_GID: $GID
       HOST_UID: $UID
       http_proxy: http://egress:8888
       https_proxy: http://egress:8888
+    init: true
     hostname: dev
     networks: [walled]
     dns: ["0.0.0.0"]

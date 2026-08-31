@@ -34,13 +34,10 @@ repo supplies the machinery.
    cd /path/to/myproject && git submodule add <url> src/<name>
    ```
 4. Run `./init` on your workstation. This sets up the directories configured
-   in `agentic-dev.yml` on the remote hosts. Re-run it whenever you change the
-   config.
-5. On each host, start the dev container(s) and leave them running:
-   ```
-   cd <path>/dev && ./run
-   ```
-6. On your workstation, launch the agent:
+   in `agentic-dev.yml` on the remote hosts, then builds and starts every
+   configured dev container in the background. Re-run it whenever you change
+   the config.
+5. On your workstation, launch the agent:
    ```
    ./agent/run
    ```
