@@ -132,11 +132,11 @@ def init_container(container, repos):
     # Distribute the shared dev tree and the container's overlay. main() has
     # checked that the two are disjoint, so they can go in a single rsync.
     dev = f"{container.path}/dev"
-    check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"], stdin=DEVNULL)
     check_call_verbose(
         [
             "rsync",
             "-avz",
+            "--mkpath",
             f"{BASEDIR / 'dev'}/",
             f"{container.overlay}/",
             f"{container.host}:{dev}/",
