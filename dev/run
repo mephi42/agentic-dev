@@ -3,9 +3,7 @@ import sys
 from os import environ, getgid, getuid
 from os.path import exists
 from pathlib import Path
-from subprocess import DEVNULL, Popen, call, check_call, check_output
-
-import yaml
+from subprocess import call, check_call
 
 
 def call_verbose(argv, **kwargs):
@@ -18,11 +16,6 @@ def check_call_verbose(argv, **kwargs):
     check_call(argv, **kwargs)
 
 
-def popen_verbose(argv, **kwargs):
-    print("+", argv, file=sys.stderr)
-    return Popen(argv, **kwargs)
-
-
 def main():
     dev_dir = Path(sys.argv[0]).parent
     env = {
@@ -33,41 +26,13 @@ def main():
     if exists("/dev/kvm"):
         env["KVM_GID"] = str(Path("/dev/kvm").stat().st_gid)
 
-    hosts = yaml.safe_load((dev_dir / "tunnels.yml").read_text())
-
-    tunnels = []
     try:
-        for host, containers in hosts.items():
-            remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
-            tunnel_args = [
-                "autossh",
-                "-M",
-                "0",
-                "-o",
-                "ServerAliveInterval=30",
-                "-o",
-                "ServerAliveCountMax=3",
-                "-o",
-                "StreamLocalBindUnlink=yes",
-            ]
-            for container in containers:
-                local_sock = (
-                    dev_dir / "home" / ".ssh" / f"sshd-{container['name']}.sock"
-                )
-                remote_sock = (
-                    f"{remote_home}/{container['path']}/dev/home/.ssh/sshd.sock"
-                )
-                tunnel_args.extend(["-L", f"{local_sock}:{remote_sock}"])
-            tunnel_args.extend(["-N", host])
-            tunnels.append(popen_verbose(tunnel_args, stdin=DEVNULL))
         status = call_verbose(
             ["docker", "compose", "run", "--build", "--remove-orphans", "dev"],
             cwd=dev_dir,
             env=env,
         )
     finally:
-        for tunnel in tunnels:
-            tunnel.terminate()
         check_call_verbose(
             ["docker", "compose", "down"],
             cwd=dev_dir,

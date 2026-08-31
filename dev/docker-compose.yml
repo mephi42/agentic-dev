@@ -12,7 +12,7 @@ services:
     volumes:
       - ./home:/home/user
       - ../src:/home/user/src
-    depends_on: [egress]
+    depends_on: [egress, tunnel]
   egress:
     build: ./egress
     hostname: egress
@@ -21,6 +21,17 @@ services:
         driver_opts:
           com.docker.network.endpoint.ifname: walled0
       outside: {}
+  tunnel:
+    build: ./tunnel
+    environment:
+      HOST_GID: $GID
+      HOST_UID: $UID
+    init: true
+    networks: [outside]
+    volumes:
+      - $HOME/.ssh:/home/user/.ssh:ro
+      - ./home/.ssh:/sockets
+      - ./tunnels.yml:/tunnels.yml:ro
 networks:
   walled:
     internal: true
