@@ -119,17 +119,15 @@ def init_container(container, repos):
     # container mounts <path>/src as ~/src, which is what sync-git pushes into;
     # cloning from upstream is far cheaper than letting sync-git create an
     # empty repo and push the whole history into it over the tunnel.
-    clone = []
+    commands = []
     for path, url in repos:
         # && and || have equal precedence, so each repo needs its own
         # subshell: otherwise a failed clone falls through to the next.
         dest = shlex.quote(f"{container.path}/{path}")
-        clone.append(
+        commands.append(
             f"(git -C {dest} rev-parse --git-dir >/dev/null 2>&1 || "
             f"git clone {shlex.quote(url)} {dest})"
         )
-    if len(clone) > 0:
-        check_call_verbose(["ssh", container.host, " && ".join(clone)], stdin=DEVNULL)
 
     # Distribute the shared dev tree and the container's overlay. main() has
     # checked that the two are disjoint, so they can go in a single rsync.
@@ -145,9 +143,11 @@ def init_container(container, repos):
         ],
         stdin=DEVNULL,
     )
-    check_call_verbose(
-        ["ssh", container.host, f"cd {shlex.quote(dev)} && ./run"], stdin=DEVNULL
-    )
+
+    # Cloning does not touch dev/, so it can wait until the tree is in place and
+    # share an ssh connection with the (re)start.
+    commands.append(f"cd {shlex.quote(dev)} && ./run")
+    check_call_verbose(["ssh", container.host, " && ".join(commands)], stdin=DEVNULL)
 
 
 def main():
