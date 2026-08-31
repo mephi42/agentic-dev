@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and start the dev containers in the background."""
+"""Build and (re)start the dev containers in the background."""
 
 import sys
 from os import environ, getgid, getuid
@@ -23,7 +23,15 @@ def main():
     if exists("/dev/kvm"):
         env["KVM_GID"] = str(Path("/dev/kvm").stat().st_gid)
     check_call_verbose(
-        ["docker", "compose", "up", "--build", "--remove-orphans", "--wait"],
+        [
+            "docker",
+            "compose",
+            "up",
+            "--build",
+            "--force-recreate",
+            "--remove-orphans",
+            "--wait",
+        ],
         cwd=dev_dir,
         env=env,
     )
