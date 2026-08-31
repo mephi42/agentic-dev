@@ -153,6 +153,7 @@ def init_container(container, repos):
 def main():
     cfg = yaml.safe_load((BASEDIR / "agentic-dev.yml").read_text())
     project = cfg["project"]
+    base_image = project.get("base-image", "ubuntu:24.04")
     containers = [
         Container(
             host=host,
@@ -180,11 +181,18 @@ def main():
         )
     dev_service.setdefault("build", {}).setdefault("args", {}).update(
         {
-            "BASE_IMAGE": project.get("base-image", ""),
+            "BASE_IMAGE": base_image,
             "LLVM_VERSION": str(project.get("llvm", "")),
             "RUST_VERSION": str(project.get("rust", "")),
             "CCACHE_MAXSIZE": str(project.get("ccache", "")),
         }
+    )
+
+    (BASEDIR / "agent" / "build-args.yml").write_text(
+        yaml.safe_dump(
+            {"services": {"agent": {"build": {"args": {"BASE_IMAGE": base_image}}}}},
+            sort_keys=False,
+        )
     )
 
     project_packages = list(project.get("packages", []))

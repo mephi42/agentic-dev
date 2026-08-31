@@ -28,12 +28,11 @@ def main():
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
     agent = cfg["project"].get("agent", "claude")
-    override = agent_dir / "docker-compose.override.yml"
-    override.unlink(missing_ok=True)
-    override.symlink_to(Path(agent) / "agent.yml")
-
     env = {
         **environ,
+        "COMPOSE_FILE": ":".join(
+            ["docker-compose.yml", f"{agent}/agent.yml", "build-args.yml"]
+        ),
         "COMPOSE_PROJECT_NAME": f"{cfg['project']['name']}-agent",
         "UID": str(getuid()),
         "GID": str(getgid()),

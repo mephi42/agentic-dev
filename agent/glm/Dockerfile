@@ -1,9 +1,10 @@
-FROM ubuntu:24.04 AS claude
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE} AS claude
 RUN apt-get update && apt-get install -y curl
 RUN curl -fsSL https://claude.ai/install.sh | bash -s 2.1.234
 RUN mv /root/.local/share/claude/versions/2.1.234 /claude
 
-FROM ubuntu:24.04
+FROM ${BASE_IMAGE}
 RUN --mount=type=bind,from=common,source=packages.txt,target=/tmp/packages.txt \
     apt-get update && xargs apt-get install -y </tmp/packages.txt
 COPY --from=claude /claude /usr/bin/claude
