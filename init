@@ -2,10 +2,11 @@
 import json
 import shlex
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from os.path import dirname
 from pathlib import Path
-from subprocess import check_call, check_output
+from subprocess import DEVNULL, check_call, check_output
 from typing import List
 
 import yaml
@@ -105,6 +106,40 @@ class Container:
     @property
     def tunnels(self):
         return self.overlay / "tunnels.yml"
+
+
+def init_container(container, repos):
+    """Prepare one container's host directory and (re)start the container."""
+    # Clone the source repos on the host, unless they are already there. A dev
+    # container mounts <path>/src as ~/src, which is what sync-git pushes into;
+    # cloning from upstream is far cheaper than letting sync-git create an
+    # empty repo and push the whole history into it over the tunnel.
+    clone = []
+    for path, url in repos:
+        # && and || have equal precedence, so each repo needs its own
+        # subshell: otherwise a failed clone falls through to the next.
+        dest = shlex.quote(f"{container.path}/{path}")
+        clone.append(
+            f"(git -C {dest} rev-parse --git-dir >/dev/null 2>&1 || "
+            f"git clone {shlex.quote(url)} {dest})"
+        )
+    if len(clone) > 0:
+        check_call_verbose(["ssh", container.host, " && ".join(clone)], stdin=DEVNULL)
+
+    # Distribute the shared dev tree, then layer the container's overlay.
+    dev = f"{container.path}/dev"
+    check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"], stdin=DEVNULL)
+    check_call_verbose(
+        ["rsync", "-avz", f"{BASEDIR / 'dev'}/", f"{container.host}:{dev}/"],
+        stdin=DEVNULL,
+    )
+    check_call_verbose(
+        ["rsync", "-avz", f"{container.overlay}/", f"{container.host}:{dev}/"],
+        stdin=DEVNULL,
+    )
+    check_call_verbose(
+        ["ssh", container.host, f"cd {shlex.quote(dev)} && ./run"], stdin=DEVNULL
+    )
 
 
 def main():
@@ -253,45 +288,15 @@ def main():
         )
     agent_hosts.write_text("".join(known_hosts))
 
-    # Clone the source repos on each host, unless they are already there. A
-    # dev container mounts <path>/src as ~/src, which is what sync-git pushes
-    # into; cloning from upstream is far cheaper than letting sync-git create
-    # an empty repo and push the whole history into it over the tunnel.
+    # Set every container up: containers are independent of each other, so do
+    # them all at once instead of waiting for each one in turn.
     repos = source_repos(BASEDIR)
-    for container in containers:
-        clone = []
-        for path, url in repos:
-            # && and || have equal precedence, so each repo needs its own
-            # subshell: otherwise a failed clone falls through to the next.
-            dest = shlex.quote(f"{container.path}/{path}")
-            clone.append(
-                f"(git -C {dest} rev-parse --git-dir >/dev/null 2>&1 || "
-                f"git clone {shlex.quote(url)} {dest})"
-            )
-        if len(clone) > 0:
-            check_call_verbose(["ssh", container.host, " && ".join(clone)])
-
-    # Distribute the shared dev tree, then layer each container's overlay.
-    for container in containers:
-        dev = f"{container.path}/dev"
-        check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"])
-        check_call_verbose(
-            [
-                "rsync",
-                "-avz",
-                f"{BASEDIR / 'dev'}/",
-                f"{container.host}:{dev}/",
-            ]
-        )
-        check_call_verbose(
-            [
-                "rsync",
-                "-avz",
-                f"{container.overlay}/",
-                f"{container.host}:{dev}/",
-            ]
-        )
-        check_call_verbose(["ssh", container.host, f"cd {shlex.quote(dev)} && ./run"])
+    with ThreadPoolExecutor(max_workers=len(containers)) as executor:
+        for future in as_completed(
+            executor.submit(init_container, container, repos)
+            for container in containers
+        ):
+            future.result()
 
     for command in project.get("post-init", []):
         check_call_verbose(command, shell=True, cwd=BASEDIR)
