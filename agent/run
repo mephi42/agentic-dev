@@ -41,7 +41,7 @@ def main():
     }
     tunnels = []
     try:
-        for host, host_cfg in cfg["hosts"].items():
+        for host, host_cfg in cfg.get("hosts", {}).items():
             remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
             tunnel_args = [
                 "autossh",

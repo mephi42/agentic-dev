@@ -162,7 +162,7 @@ def main():
             packages=container_cfg.get("packages", []),
             post_install=container_cfg.get("post-install", []),
         )
-        for host, host_cfg in cfg["hosts"].items()
+        for host, host_cfg in cfg.get("hosts", {}).items()
         for container, container_cfg in host_cfg["containers"].items()
     ]
 
@@ -318,7 +318,7 @@ def main():
     # Set every container up: containers are independent of each other, so do
     # them all at once instead of waiting for each one in turn.
     repos = source_repos(BASEDIR)
-    with ThreadPoolExecutor(max_workers=len(containers)) as executor:
+    with ThreadPoolExecutor(max_workers=max(1, len(containers))) as executor:
         for future in as_completed(
             executor.submit(init_container, container, repos)
             for container in containers
