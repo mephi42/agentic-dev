@@ -108,6 +108,11 @@ class Container:
         return self.overlay / "tunnels.yml"
 
 
+def rel_files(root: Path):
+    """Every file (excluding directories) below root, relative to it."""
+    return {path.relative_to(root) for path in root.rglob("*") if not path.is_dir()}
+
+
 def init_container(container, repos):
     """Prepare one container's host directory and (re)start the container."""
     # Clone the source repos on the host, unless they are already there. A dev
@@ -126,15 +131,18 @@ def init_container(container, repos):
     if len(clone) > 0:
         check_call_verbose(["ssh", container.host, " && ".join(clone)], stdin=DEVNULL)
 
-    # Distribute the shared dev tree, then layer the container's overlay.
+    # Distribute the shared dev tree and the container's overlay. main() has
+    # checked that the two are disjoint, so they can go in a single rsync.
     dev = f"{container.path}/dev"
     check_call_verbose(["ssh", container.host, "mkdir", "-p", f"{dev}/"], stdin=DEVNULL)
     check_call_verbose(
-        ["rsync", "-avz", f"{BASEDIR / 'dev'}/", f"{container.host}:{dev}/"],
-        stdin=DEVNULL,
-    )
-    check_call_verbose(
-        ["rsync", "-avz", f"{container.overlay}/", f"{container.host}:{dev}/"],
+        [
+            "rsync",
+            "-avz",
+            f"{BASEDIR / 'dev'}/",
+            f"{container.overlay}/",
+            f"{container.host}:{dev}/",
+        ],
         stdin=DEVNULL,
     )
     check_call_verbose(
@@ -287,6 +295,17 @@ def main():
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )
     agent_hosts.write_text("".join(known_hosts))
+
+    # Make sure the overlay does not override anything.
+    dev_dir = BASEDIR / "dev"
+    dev_files = rel_files(dev_dir)
+    for container in containers:
+        shadowed = dev_files & rel_files(container.overlay)
+        if len(shadowed) > 0:
+            sys.exit(
+                f"{container.overlay} shadows {dev_dir}: "
+                + ", ".join(sorted(str(path) for path in shadowed))
+            )
 
     # Set every container up: containers are independent of each other, so do
     # them all at once instead of waiting for each one in turn.
