@@ -190,7 +190,7 @@ def main():
 
     (BASEDIR / "agent" / "build-args.yml").write_text(
         yaml.safe_dump(
-            {"services": {"agent": {"build": {"args": {"BASE_IMAGE": base_image}}}}},
+            {"services": {"common": {"build": {"args": {"BASE_IMAGE": base_image}}}}},
             sort_keys=False,
         )
     )

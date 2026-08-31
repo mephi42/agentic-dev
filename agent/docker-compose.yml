@@ -1,5 +1,10 @@
 services:
+  common:
+    build: ./common
   agent:
+    build:
+      additional_contexts:
+        base: "service:common"
     environment:
       HOST_GID: $GID
       HOST_UID: $UID

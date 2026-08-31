@@ -1,14 +1,6 @@
-ARG BASE_IMAGE
-FROM ${BASE_IMAGE} AS claude
-RUN apt-get update && apt-get install -y curl
+FROM base AS claude
 RUN curl -fsSL https://claude.ai/install.sh | bash -s 2.1.234
 RUN mv /root/.local/share/claude/versions/2.1.234 /claude
 
-FROM ${BASE_IMAGE}
-RUN --mount=type=bind,from=common,source=packages.txt,target=/tmp/packages.txt \
-    apt-get update && xargs apt-get install -y </tmp/packages.txt
+FROM base
 COPY --from=claude /claude /usr/bin/claude
-COPY --from=common docker-entrypoint.sh /docker-entrypoint.sh
-COPY --from=common docker-entrypoint-user.sh /docker-entrypoint-user.sh
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["/bin/bash"]

@@ -2,8 +2,6 @@ services:
   agent:
     build:
       context: ./claude
-      additional_contexts:
-        common: ./common
     volumes:
       - $PROJECT_DIR/CLAUDE.md:/home/user/CLAUDE.md
   egress:

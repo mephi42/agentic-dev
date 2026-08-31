@@ -14,6 +14,9 @@ project:
   #  - locale-gen en_US.UTF-8   after the packages are installed
   #post-init:                 # shell commands to run locally after init
   #  - echo 🎉
+#localhost:                  # the machine the agent itself runs on
+#  packages:                 # extra apt packages for the agent image
+#    - gdb
 hosts:
   <host ssh alias>:           # you must configure host ssh to understand this
     containers:

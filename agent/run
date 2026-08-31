@@ -28,6 +28,11 @@ def main():
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
     agent = cfg["project"].get("agent", "claude")
+
+    (agent_dir / "common" / "packages-localhost.txt").write_text(
+        "".join(pkg + "\n" for pkg in (cfg.get("localhost", {}).get("packages", [])))
+    )
+
     env = {
         **environ,
         "COMPOSE_FILE": ":".join(

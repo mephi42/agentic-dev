@@ -1,4 +1,5 @@
 clang-format
+curl
 git
 make
 poppler-utils

@@ -1,9 +1,7 @@
 services:
   agent:
     build:
-      context: ./glm
-      additional_contexts:
-        common: ./common
+      context: ./claude   # glm runs the claude binary
     environment:
       # GLM 5.3 runs through Claude Code via Z.ai's Anthropic-compatible endpoint.
       ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic
