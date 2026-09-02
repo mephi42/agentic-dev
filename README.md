@@ -46,6 +46,12 @@ repo supplies the machinery.
 
 Talk to the local dev container directly with `dev/ssh [command...]`.
 
+## Poking at things by hand
+
+`./run-on <container> [command...]` is the agent's own `run-on` for the
+workstation shell: sync the local sources to a dev container and run a command
+there, or a shell if there is none. It needs `./agent/run` going.
+
 ## Networking model
 
 The agent and dev containers have no direct route out. All egress goes through
