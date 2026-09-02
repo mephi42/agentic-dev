@@ -12,8 +12,9 @@ RUN if [ -n "$LLVM_VERSION" ]; then \
         curl -sSf https://apt.llvm.org/llvm.sh | bash -s -- "$LLVM_VERSION" && \
         apt-get install -y --no-install-recommends \
             "llvm-$LLVM_VERSION" && \
+        mkdir -p /etc/dev-env.d && \
         echo "PATH=/usr/lib/llvm-$LLVM_VERSION/bin:\$PATH" \
-            >/etc/profile.d/llvm.sh; \
+            >/etc/dev-env.d/10-llvm.sh; \
     fi
 ARG RUST_VERSION=
 RUN if [ -n "$RUST_VERSION" ]; then \
@@ -45,7 +46,8 @@ RUN if [ -n "$CCACHE_MAXSIZE" ]; then \
             done; \
         fi && \
         echo "max_size = $CCACHE_MAXSIZE" >/etc/ccache.conf && \
-        echo "PATH=/usr/lib/ccache:\$PATH" >/etc/profile.d/ccache.sh; \
+        mkdir -p /etc/dev-env.d && \
+        echo "PATH=/usr/lib/ccache:\$PATH" >/etc/dev-env.d/20-ccache.sh; \
     fi
 RUN --mount=type=bind,source=post-install.sh,target=/tmp/post-install.sh \
     sh -e -x /tmp/post-install.sh
