@@ -1,6 +1,9 @@
-FROM base AS claude
-RUN curl -fsSL https://claude.ai/install.sh | bash -s 2.1.234
-RUN mv /root/.local/share/claude/versions/2.1.234 /claude
+FROM scratch AS claude
+ADD --chmod=755 \
+    --checksum=sha256:704f1334ac65d3e89e1c6c1d7663293ad786a6166afdb71b5075337df630f976 \
+    https://downloads.claude.ai/claude-code-releases/2.1.258/linux-x64/claude \
+    /claude
 
 FROM base
 COPY --from=claude /claude /usr/bin/claude
+ENV DISABLE_AUTOUPDATER=1
