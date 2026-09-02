@@ -10,6 +10,8 @@ RUN if [ -n "$LLVM_VERSION" ]; then \
             software-properties-common \
             wget && \
         curl -sSf https://apt.llvm.org/llvm.sh | bash -s -- "$LLVM_VERSION" && \
+        apt-get install -y --no-install-recommends \
+            "llvm-$LLVM_VERSION" && \
         echo "PATH=/usr/lib/llvm-$LLVM_VERSION/bin:\$PATH" \
             >/etc/profile.d/llvm.sh; \
     fi
