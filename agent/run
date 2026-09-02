@@ -28,9 +28,14 @@ def main():
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
     agent = cfg["project"].get("agent", "claude")
+    packages = list(cfg.get("localhost", {}).get("packages", []))
+
+    rp_project = cfg["project"].get("review-prompts", "")
+    if rp_project == "kernel":
+        packages.append("coccinelle")
 
     (agent_dir / "common" / "packages-localhost.txt").write_text(
-        "".join(pkg + "\n" for pkg in (cfg.get("localhost", {}).get("packages", [])))
+        "".join(pkg + "\n" for pkg in packages)
     )
 
     env = {
@@ -43,6 +48,7 @@ def main():
         "GID": str(getgid()),
         "PROJECT_DIR": str(project_dir.resolve()),
         "WORKING_DIR": cfg["project"]["working-dir"],
+        "REVIEW_PROMPTS_PROJECT": rp_project,
     }
     tunnels = []
     try:

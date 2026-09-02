@@ -2,6 +2,8 @@ services:
   agent:
     build:
       context: ./claude
+      args:
+        REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     volumes:
       - $PROJECT_DIR/CLAUDE.md:/home/user/CLAUDE.md
   egress:

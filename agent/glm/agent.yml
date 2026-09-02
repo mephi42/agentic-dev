@@ -2,6 +2,8 @@ services:
   agent:
     build:
       context: ./claude   # glm runs the claude binary
+      args:
+        REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     environment:
       # GLM 5.3 runs through Claude Code via Z.ai's Anthropic-compatible endpoint.
       ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic

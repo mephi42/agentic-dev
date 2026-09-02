@@ -7,6 +7,7 @@ project:
   #llvm: 22                   # install this LLVM version from apt.llvm.org
   #rust: 1.97.1               # install this Rust version
   #ccache: 100G               # install ccache with this max cache size
+  #review-prompts: kernel     # install masoncl/review-prompts for this project
   #packages:                  # extra apt packages for the dev image
   #  - build-essential
   #  - gdb
