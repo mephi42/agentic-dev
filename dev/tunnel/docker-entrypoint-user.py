@@ -15,6 +15,7 @@ SSH_OPTIONS = [
     arg
     for option in [
         "BatchMode=yes",
+        "ControlPath=none",
         "ExitOnForwardFailure=yes",
         "ServerAliveInterval=30",
         "ServerAliveCountMax=3",

@@ -57,5 +57,4 @@ cross-build and cross-test across hosts.
 The SSH tunnels reaching the peer hosts are held open by a sidecar container
 that uses your own `~/.ssh`. It never prompts: `ssh <host>` must already work
 unattended from the host, or the tunnel fails. `~/.ssh` is mounted read-only
-and no agent is forwarded, so the key must be unencrypted and `ControlMaster`
-is unavailable.
+and no agent is forwarded, so the key must be unencrypted.
