@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
-from os import environ
-from os.path import expanduser, join, relpath
+from os.path import expanduser, join
 from subprocess import Popen, check_call, check_output
 
 
@@ -27,7 +26,6 @@ def main():
     if len(command) == 0:
         command = ["bash", "-l"]
     super_root = expanduser("~")
-    working_dir = environ["WORKING_DIR"]
 
     submodules = [
         sm
@@ -38,9 +36,6 @@ def main():
         ).split()
         if sm.startswith("src/")
     ]
-    if working_dir not in submodules:
-        sys.exit(f"working_dir {working_dir!r} not among submodules {submodules}")
-    extra = [sm for sm in submodules if sm != working_dir]
     files = sorted(
         file
         for file in check_output_verbose(
@@ -56,14 +51,11 @@ def main():
         check_call_verbose(
             [
                 "sync-git",
-                *[
-                    f"--extra-repo={relpath(join(super_root, sm), join(super_root, working_dir))}"
-                    for sm in extra
-                ],
-                f"{container}:{working_dir}",
+                f"--root={super_root}",
+                *[f"--extra-repo={join(super_root, sm)}" for sm in submodules],
+                f"{container}:.",
                 *command,
-            ],
-            cwd=join(super_root, working_dir),
+            ]
         )
     finally:
         if rsync is not None:

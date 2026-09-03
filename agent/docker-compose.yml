@@ -10,7 +10,6 @@ services:
       HOST_UID: $UID
       http_proxy: http://egress:8888
       https_proxy: http://egress:8888
-      WORKING_DIR: $WORKING_DIR
       REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     hostname: agent
     networks: [walled]

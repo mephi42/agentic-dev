@@ -4,7 +4,7 @@ import sys
 from argparse import ArgumentParser
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from os import execvp, getcwd
-from os.path import join, relpath
+from os.path import join, realpath, relpath
 from subprocess import CalledProcessError, call, check_call, check_output
 from time import sleep
 from typing import List
@@ -88,7 +88,7 @@ def get_modules(repo):
 
 
 def build_command(
-    main_repo: str,
+    root: str,
     modules: List[str],
     commits: List[str],
     host_repo: str,
@@ -106,7 +106,7 @@ def build_command(
         )
         remote_cwd = next_remote_cwd
     if len(command) > 0:
-        cwd_rel = relpath(join(host_repo, relpath(getcwd(), main_repo)), remote_cwd)
+        cwd_rel = relpath(join(host_repo, relpath(getcwd(), root)), remote_cwd)
         if cwd_rel != ".":
             full_command.append(shlex.join(("cd", cwd_rel)))
         full_command.append(shlex.join(command))
@@ -117,24 +117,32 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("target")
     parser.add_argument("--extra-repo", action="append", default=[])
+    parser.add_argument(
+        "--root",
+        help="local directory that the target directory mirrors. It need not be"
+        " a git repo, and is not synced itself: only the --extra-repo repos are."
+        " Default: the git repo containing the current directory, synced too.",
+    )
     args, command = parser.parse_known_args()
     host, host_repo = args.target.split(":")
 
-    main_repo = get_toplevel(".")
-    repos = [main_repo] + [get_toplevel(path) for path in args.extra_repo]
+    root = realpath(args.root) if args.root else get_toplevel(".")
+    repos = ([] if args.root else [root]) + [
+        get_toplevel(path) for path in args.extra_repo
+    ]
     modules = []
     for repo in repos:
         for module in ["."] + get_modules(repo):
-            modules.append(relpath(join(repo, module), main_repo))
+            modules.append(relpath(join(repo, module), root))
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = [
-            pool.submit(git_push, args.target, main_repo, module) for module in modules
+            pool.submit(git_push, args.target, root, module) for module in modules
         ]
         wait(futures, return_when=ALL_COMPLETED)
         commits = [future.result() for future in futures]
 
-    full_command = build_command(main_repo, modules, commits, host_repo, command)
+    full_command = build_command(root, modules, commits, host_repo, command)
     print(f"\033[96mRUN@{host}\033[0m {full_command}")
 
     # Force tty allocation, needed when running from Qt Creator.
