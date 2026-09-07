@@ -46,6 +46,11 @@ repo supplies the machinery.
 
 Talk to the local dev container directly with `dev/ssh [command...]`.
 
+## One-off sandboxes
+
+To run an agent on a directory without scaffolding a project for it, run
+`/path/to/agentic-dev/agent-sandbox` from that directory. See its `--help`.
+
 ## Poking at things by hand
 
 `./run-on <container> [command...]` is the agent's own `run-on` for the
