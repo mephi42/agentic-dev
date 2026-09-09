@@ -46,6 +46,15 @@ def main():
         "-p gdb. Repeatable.",
     )
     parser.add_argument(
+        "-A",
+        "--allow",
+        action="append",
+        default=[],
+        metavar="REGEX",
+        help="let the agent reach the hosts matching REGEX through the egress "
+        r"proxy, a tinyproxy filter line: -A '^pkg\.go\.dev$'. Repeatable.",
+    )
+    parser.add_argument(
         "-m",
         "--mount",
         action="append",
@@ -87,6 +96,8 @@ def main():
             cfg.setdefault("localhost", {}).setdefault("packages", []).extend(
                 args.package
             )
+        if args.allow:
+            cfg.setdefault("localhost", {}).setdefault("allow", []).extend(args.allow)
         if args.mount:
             mounts = cfg.setdefault("localhost", {}).setdefault("mounts", [])
             for mount in args.mount:

@@ -51,13 +51,6 @@ Talk to the local dev container directly with `dev/ssh [command...]`.
 To run an agent on a directory without scaffolding a project for it, run
 `/path/to/agentic-dev/agent-sandbox` from that directory. See its `--help`.
 
-To hand the agent credentials, share the directory holding them, naming both
-sides:
-```
-/path/to/agentic-dev/agent-sandbox --mount ~/.aws:/home/user/.aws
-```
-The agent runs as `user`, so its home is `/home/user`.
-
 ## Poking at things by hand
 
 `./run-on <container> [command...]` is the agent's own `run-on` for the
