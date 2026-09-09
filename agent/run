@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from os import environ, getgid, getuid
+from os.path import normpath
 from pathlib import Path
 from subprocess import DEVNULL, Popen, call, check_call, check_output
 
@@ -38,10 +39,38 @@ def main():
         "".join(pkg + "\n" for pkg in packages)
     )
 
+    volumes = []
+    for entry in cfg.get("localhost", {}).get("mounts", []):
+        source, _, rest = entry.partition(":")
+        target, _, mode = rest.partition(":")
+        # Handle targets like "/home/user/../etc" gracefully.
+        target = normpath(target)
+        if not target.startswith("/") or mode not in ("", "ro", "rw"):
+            sys.exit(
+                f"{entry}: expected <host path>:<agent path> and maybe :ro or :rw"
+            )
+        source = (project_dir / Path(source).expanduser()).resolve()
+        if not source.exists():
+            # Prevent docker from creating missing sources as root.
+            sys.exit(f"{entry}: {source} does not exist")
+        if Path(target).is_relative_to("/home/user"):
+            # Prevent docker from creating missing mount points as root.
+            point = agent_dir / "home" / Path(target).relative_to("/home/user")
+            point.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                point.mkdir(exist_ok=True)
+            else:
+                point.touch()
+        volumes.append(f"{source}:{target}:{mode or 'ro'}")
+    run_yml = agent_dir / f"run-{cfg['project']['name']}.yml"
+    run_yml.write_text(
+        yaml.safe_dump({"services": {"agent": {"volumes": volumes}}}, sort_keys=False)
+    )
+
     env = {
         **environ,
         "COMPOSE_FILE": ":".join(
-            ["docker-compose.yml", f"{agent}/agent.yml", "build-args.yml"]
+            ["docker-compose.yml", f"{agent}/agent.yml", "init.yml", run_yml.name]
         ),
         "COMPOSE_PROJECT_NAME": f"{cfg['project']['name']}-agent",
         "UID": str(getuid()),

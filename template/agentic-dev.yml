@@ -18,6 +18,9 @@ project:
 #localhost:                  # the machine the agent itself runs on
 #  packages:                 # extra apt packages for the agent image
 #    - gdb
+#  mounts:                   # host paths for the agent, read-only unless :rw
+#    - ~/.aws:/home/user/.aws
+#    - ~/.config/gcloud:/home/user/.config/gcloud:rw
 hosts:
   <host ssh alias>:           # you must configure host ssh to understand this
     containers:
