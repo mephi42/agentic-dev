@@ -37,6 +37,13 @@ def main():
         "-a", "--agent", default="claude", help="agent to run (default: claude)"
     )
     parser.add_argument(
+        "-b",
+        "--base-image",
+        metavar="IMAGE",
+        help="build the agent image on top of IMAGE, e.g. -b ubuntu:22.04 "
+        "(default: ubuntu:24.04)",
+    )
+    parser.add_argument(
         "-p",
         "--package",
         action="append",
@@ -92,6 +99,8 @@ def main():
                 "agent": args.agent,
             }
         }
+        if args.base_image:
+            cfg["project"]["base-image"] = args.base_image
         if args.package:
             cfg.setdefault("localhost", {}).setdefault("packages", []).extend(
                 args.package
