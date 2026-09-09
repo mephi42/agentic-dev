@@ -37,6 +37,15 @@ def main():
         "-a", "--agent", default="claude", help="agent to run (default: claude)"
     )
     parser.add_argument(
+        "-p",
+        "--package",
+        action="append",
+        default=[],
+        metavar="PACKAGE",
+        help="install an extra apt package into the agent container, e.g. "
+        "-p gdb. Repeatable.",
+    )
+    parser.add_argument(
         "-m",
         "--mount",
         action="append",
@@ -74,6 +83,10 @@ def main():
                 "agent": args.agent,
             }
         }
+        if args.package:
+            cfg.setdefault("localhost", {}).setdefault("packages", []).extend(
+                args.package
+            )
         if args.mount:
             mounts = cfg.setdefault("localhost", {}).setdefault("mounts", [])
             for mount in args.mount:
