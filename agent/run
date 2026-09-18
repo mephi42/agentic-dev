@@ -64,12 +64,18 @@ def main():
             else:
                 point.touch()
         volumes.append(f"{source}:{target}:{mode or 'ro'}")
+
+    agent_service = {"volumes": volumes}
+    tmp = cfg.get("localhost", {}).get("tmp")
+    if tmp is not None:
+        agent_service["tmpfs"] = [f"/tmp:exec,mode=1777,size={tmp}"]
+
     run_yml = agent_dir / f"run-{cfg['project']['name']}.yml"
     run_yml.write_text(
         yaml.safe_dump(
             {
                 "services": {
-                    "agent": {"volumes": volumes},
+                    "agent": agent_service,
                     "egress": {"build": {"args": {"ALLOW_LOCALHOST": allow}}},
                 }
             },

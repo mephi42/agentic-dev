@@ -2,6 +2,7 @@
 /.cache/
 /.claude.json
 /.claude/
+/.config/
 /.gitconfig
 /.gitmodules
 /.lesshst
