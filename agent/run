@@ -23,12 +23,30 @@ def popen_verbose(argv, **kwargs):
     return Popen(argv, **kwargs)
 
 
+def find_agent(agent_dir, agent):
+    """Locate an agent definition. A plugin shadows a built-in of the name."""
+    xdg = environ.get("XDG_DATA_HOME")
+    share = Path(xdg) if xdg else Path.home() / ".local" / "share"
+    # Resolve: agent_dir may be a symlink into a temporary agent-sandbox project.
+    dirs = [(share / "agentic-dev" / "agent").resolve(), agent_dir.resolve()]
+    for d in dirs:
+        if (d / agent / "agent.yml").is_file():
+            return (d / agent).resolve()
+    available = sorted({p.parent.name for d in dirs for p in d.glob("*/agent.yml")})
+    sys.exit(
+        f"agent {agent}: no {agent}/agent.yml in "
+        + " or ".join(map(str, dirs))
+        + "\navailable agents: "
+        + ", ".join(available)
+    )
+
+
 def main():
     agent_dir = Path(sys.argv[0]).parent
     project_dir = agent_dir.parent
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
-    agent = cfg["project"].get("agent", "claude")
+    agent_path = find_agent(agent_dir, cfg["project"].get("agent", "claude"))
     packages = list(cfg.get("localhost", {}).get("packages", []))
 
     rp_project = cfg["project"].get("review-prompts", "")
@@ -86,12 +104,18 @@ def main():
     env = {
         **environ,
         "COMPOSE_FILE": ":".join(
-            ["docker-compose.yml", f"{agent}/agent.yml", "init.yml", run_yml.name]
+            [
+                "docker-compose.yml",
+                str(agent_path / "agent.yml"),
+                "init.yml",
+                run_yml.name,
+            ]
         ),
         "COMPOSE_PROJECT_NAME": f"{cfg['project']['name']}-agent",
         "UID": str(getuid()),
         "GID": str(getgid()),
         "PROJECT_DIR": str(project_dir.resolve()),
+        "AGENT_DIR": str(agent_path),
         "WORKING_DIR": cfg["project"]["working-dir"],
         "REVIEW_PROMPTS_PROJECT": rp_project,
     }

@@ -17,4 +17,4 @@ services:
   egress:
     build:
       additional_contexts:
-        agent: ./glm
+        agent: $AGENT_DIR

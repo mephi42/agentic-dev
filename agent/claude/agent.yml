@@ -1,7 +1,7 @@
 services:
   agent:
     build:
-      context: ./claude
+      context: $AGENT_DIR
       args:
         REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     volumes:
@@ -9,4 +9,4 @@ services:
   egress:
     build:
       additional_contexts:
-        agent: ./claude
+        agent: $AGENT_DIR

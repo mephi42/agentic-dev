@@ -46,6 +46,13 @@ repo supplies the machinery.
 
 Talk to the local dev container directly with `dev/ssh [command...]`.
 
+## Agents
+
+`project.agent` names a directory with an `agent.yml` compose fragment and
+whatever it needs, looked up in `~/.local/share/agentic-dev/agent/<name>`
+first, then in agentic-dev's own [`agent/`](agent). To add one, copy the setup
+of an existing agent.
+
 ## One-off sandboxes
 
 To run an agent on a directory without scaffolding a project for it, run

@@ -34,7 +34,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "-a", "--agent", default="claude", help="agent to run (default: claude)"
+        "-a",
+        "--agent",
+        default="claude",
+        help="agent to run: a directory under ~/.local/share/agentic-dev/agent "
+        "or a built-in one (default: claude)",
     )
     parser.add_argument(
         "-b",
