@@ -94,7 +94,7 @@ def main():
         (project / "src").symlink_to(source)
         (project / ".gitmodules").touch()
         check_call_verbose(["git", "init", "--quiet", project])
-        (project / "CLAUDE.md").write_text(
+        (project / "AGENTS.md").write_text(
             "# Project notes\n"
             "\n"
             "`~/src` is the source directory, shared with the host. There are no\n"

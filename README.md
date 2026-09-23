@@ -24,7 +24,7 @@ repo supplies the machinery.
    ├── agent -> agentic-dev/agent
    ├── dev   -> agentic-dev/dev
    ├── init  -> agentic-dev/init
-   ├── CLAUDE.md             # agent instructions (mounted into the agent)
+   ├── AGENTS.md             # agent instructions (mounted into the agent)
    └── src/                  # your source trees, one git submodule each
    ```
 2. Edit `agentic-dev.yml`. Every option is documented inline in
