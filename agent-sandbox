@@ -100,6 +100,8 @@ def main():
             "`~/src` is the source directory, shared with the host. There are no\n"
             "dev containers and no remote hosts, so `run-on` cannot work here:\n"
             "build and test right where you are.\n"
+            "\n"
+            "@STYLE.md\n"
         )
         # Stable across runs, unlike the directory: it becomes COMPOSE_PROJECT_NAME.
         name = re.sub(r"[^a-z0-9_]+", "-", str(source).lower()).strip("-")
