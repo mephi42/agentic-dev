@@ -13,6 +13,8 @@ project:
   #  - gdb
   #post-install:              # shell commands to run as root in the dev image,
   #  - locale-gen en_US.UTF-8   after the packages are installed
+  #allow:                     # extra egress for the dev containers, as
+  #  - ^dl\.example\.com$       tinyproxy filter lines
   #post-init:                 # shell commands to run locally after init
   #  - echo 🎉
 #localhost:                  # the machine the agent itself runs on

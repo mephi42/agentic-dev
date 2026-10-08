@@ -224,6 +224,7 @@ def main():
                 r"^crates\.io$",
             ]
         )
+    allow.extend(project.get("allow", []))
     (BASEDIR / "dev" / "egress" / "allow.txt").write_text(
         "".join(line + "\n" for line in allow)
     )
