@@ -9,7 +9,10 @@ services:
       https_proxy: http://egress:8888
     init: true
     hostname: dev
-    networks: [walled]
+    networks:
+      walled:
+        driver_opts:
+          com.docker.network.endpoint.ifname: walled0
     dns: ["0.0.0.0"]
     volumes:
       - ./home:/home/user
