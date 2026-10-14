@@ -233,6 +233,9 @@ def main():
         r"\.kernel\.org$",
         r"\.googlesource\.com$",
         r"\.wikipedia\.org$",
+        r"^storage\.googleapis\.com$",
+        r"^sqlite\.org$",
+        r"^release-assets\.githubusercontent\.com$",
     ]
     if project.get("llvm"):
         allow.append(r"^apt\.llvm\.org$")
