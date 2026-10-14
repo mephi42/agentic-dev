@@ -123,6 +123,13 @@ def main():
         " a git repo, and is not synced itself: only the --extra-repo repos are."
         " Default: the git repo containing the current directory, synced too.",
     )
+    parser.add_argument(
+        "--rsync",
+        action="append",
+        default=[],
+        help="file, relative to the root, to copy to the target with rsync"
+        " before running the command",
+    )
     args, command = parser.parse_known_args()
     host, host_repo = args.target.split(":")
 
@@ -139,8 +146,18 @@ def main():
         futures = [
             pool.submit(git_push, args.target, root, module) for module in modules
         ]
+        if len(args.rsync) > 0:
+            futures.append(
+                pool.submit(
+                    check_call,
+                    ["rsync", "-aR", *args.rsync, f"{args.target}/"],
+                    cwd=root,
+                )
+            )
         wait(futures, return_when=ALL_COMPLETED)
-        commits = [future.result() for future in futures]
+        commits = [future.result() for future in futures[: len(modules)]]
+        for future in futures[len(modules) :]:
+            future.result()
 
     full_command = build_command(root, modules, commits, host_repo, command)
     print(f"\033[96mRUN@{host}\033[0m {full_command}")

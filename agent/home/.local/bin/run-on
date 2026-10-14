@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 from os.path import expanduser, join
-from subprocess import Popen, check_call, check_output
+from subprocess import check_call, check_output
 
 
 def check_call_verbose(argv, **kwargs):
@@ -12,11 +12,6 @@ def check_call_verbose(argv, **kwargs):
 def check_output_verbose(argv, **kwargs):
     print("+", argv, file=sys.stderr)
     return check_output(argv, **kwargs)
-
-
-def popen_verbose(argv, **kwargs):
-    print("+", argv, file=sys.stderr)
-    return Popen(argv, **kwargs)
 
 
 def main():
@@ -44,22 +39,16 @@ def main():
         if file not in submodules
     )
 
-    rsync = None
-    if len(files) > 0:
-        rsync = popen_verbose(["rsync", "-aR", *files, f"{container}:"], cwd=super_root)
-    try:
-        check_call_verbose(
-            [
-                "sync-git",
-                f"--root={super_root}",
-                *[f"--extra-repo={join(super_root, sm)}" for sm in submodules],
-                f"{container}:.",
-                *command,
-            ]
-        )
-    finally:
-        if rsync is not None:
-            rsync.wait()
+    check_call_verbose(
+        [
+            "sync-git",
+            f"--root={super_root}",
+            *[f"--extra-repo={join(super_root, sm)}" for sm in submodules],
+            *[f"--rsync={file}" for file in files],
+            f"{container}:.",
+            *command,
+        ]
+    )
 
 
 if __name__ == "__main__":
