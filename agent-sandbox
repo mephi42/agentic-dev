@@ -110,6 +110,7 @@ def main():
                 "name": f"sandbox-{name}",
                 "working-dir": "src",
                 "agent": args.agent,
+                "allow": args.allow,
             }
         }
         if args.base_image:
@@ -118,8 +119,6 @@ def main():
             cfg.setdefault("localhost", {}).setdefault("packages", []).extend(
                 args.package
             )
-        if args.allow:
-            cfg.setdefault("localhost", {}).setdefault("allow", []).extend(args.allow)
         if args.mount:
             mounts = cfg.setdefault("localhost", {}).setdefault("mounts", [])
             for mount in args.mount:

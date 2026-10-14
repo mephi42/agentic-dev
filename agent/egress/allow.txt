@@ -1,3 +1,0 @@
-^download\.01\.org$
-^git\.kernel\.org$
-^lore\.kernel\.org$

@@ -229,6 +229,10 @@ def main():
         r"^github\.com$",
         r"^ports\.ubuntu\.com$",
         r"^gitlab\.com$",
+        r"^download\.01\.org$",
+        r"\.kernel\.org$",
+        r"\.googlesource\.com$",
+        r"\.wikipedia\.org$",
     ]
     if project.get("llvm"):
         allow.append(r"^apt\.llvm\.org$")

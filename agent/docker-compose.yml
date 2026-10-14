@@ -22,7 +22,10 @@ services:
     working_dir: /home/user/$WORKING_DIR
     depends_on: [egress]
   egress:
-    build: ./egress
+    build:
+      context: ./egress
+      additional_contexts:
+        dev-egress: $PROJECT_DIR/dev/egress
     hostname: egress
     networks:
       walled:

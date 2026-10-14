@@ -67,7 +67,8 @@ there, or a shell if there is none. It needs `./agent/run` going.
 ## Networking model
 
 The agent and dev containers have no direct route out. All egress goes through
-a proxy that only allows the hostnames derived from your config.
+a proxy that only allows the hostnames derived from your config, the same list
+for both.
 
 Every container can reach every other container by name, so agents can
 cross-build and cross-test across hosts.

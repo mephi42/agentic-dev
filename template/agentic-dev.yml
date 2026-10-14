@@ -14,16 +14,14 @@ project:
   #  - gdb
   #post-install:              # shell commands to run as root in the dev image,
   #  - locale-gen en_US.UTF-8   after the packages are installed
-  #allow:                     # extra egress for the dev containers, as
-  #  - ^dl\.example\.com$       tinyproxy filter lines
+  #allow:                     # extra egress, as tinyproxy filter lines
+  #  - ^pkg\.go\.dev$
+  #  - \.amazonaws\.com$
   #post-init:                 # shell commands to run locally after init
   #  - echo 🎉
 #localhost:                  # the machine the agent itself runs on
 #  packages:                 # extra apt packages for the agent image
 #    - gdb
-#  allow:                    # extra egress, as tinyproxy filter lines
-#    - ^pkg\.go\.dev$
-#    - \.amazonaws\.com$
 #  mounts:                   # host paths for the agent, read-only unless :rw
 #    - ~/.aws:/home/user/.aws
 #    - ~/.config/gcloud:/home/user/.config/gcloud:rw
