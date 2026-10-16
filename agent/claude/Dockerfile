@@ -6,7 +6,7 @@ ADD --chmod=755 \
 
 FROM base
 COPY --from=claude /claude /usr/bin/claude
-ENV DISABLE_AUTOUPDATER=1
+ENV CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 ARG REVIEW_PROMPTS_PROJECT=
 RUN if [ -n "$REVIEW_PROMPTS_PROJECT" ]; then \
         git clone https://github.com/masoncl/review-prompts \
