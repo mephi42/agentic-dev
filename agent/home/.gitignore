@@ -8,6 +8,7 @@
 /.lesshst
 /.local/share/
 /.local/state/
+/.mirror/
 /.npm/
 /.viminfo
 /.wget-hsts

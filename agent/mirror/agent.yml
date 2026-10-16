@@ -1,0 +1,13 @@
+services:
+  agent:
+    build:
+      context: $AGENT_DIR
+    environment:
+      REFLECTION_API_KEY: $REFLECTION_API_KEY
+      FIRECRAWL_API_KEY:
+    volumes:
+      - $PROJECT_DIR/AGENTS.md:/home/user/AGENTS.md
+  egress:
+    build:
+      additional_contexts:
+        agent: $AGENT_DIR

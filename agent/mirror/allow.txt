@@ -1,0 +1,2 @@
+^api\.reflection\.ai$
+^api\.firecrawl\.dev$
