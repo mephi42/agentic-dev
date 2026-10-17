@@ -4,43 +4,40 @@ services:
       context: ./claude   # qwen runs the claude binary
       args:
         REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
+    # No network, not even the egress proxy: only loopback, shared with llm.
+    network_mode: service:llm
+    networks: !reset []
+    dns: !reset []
+    hostname: !reset null
     environment:
       # Qwen runs through Claude Code via llama-server's Anthropic-compatible endpoint.
-      ANTHROPIC_BASE_URL: http://llm:8080
+      ANTHROPIC_BASE_URL: http://127.0.0.1:8080
       ANTHROPIC_AUTH_TOKEN: local
       API_TIMEOUT_MS: "3000000"
-      no_proxy: llm
+      http_proxy: ""
+      https_proxy: ""
     volumes:
       - $PROJECT_DIR/AGENTS.md:/home/user/AGENTS.md
-    depends_on:
+    depends_on: !override
       llm:
         condition: service_healthy
   llm:
     image: ghcr.io/ggml-org/llama.cpp:server-rocm
-    # The walled network has no route to Hugging Face: download the model
-    # into ~/.cache/llama.cpp beforehand.
+    # llm has no network: download the model into ~/.cache/llama.cpp beforehand.
     command:
       - --hf-repo
       - Qwen/Qwen3-14B-GGUF:Q4_K_M
       - --offline
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8080"
     devices:
       - /dev/dri
       - /dev/kfd
     environment:
       LLAMA_CACHE: /models
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/health"]
       interval: 2s
       retries: 300
-    hostname: llm
-    networks: [walled]
+    network_mode: none
     volumes:
       - $HOME/.cache/llama.cpp:/models
-  egress:
-    build:
-      additional_contexts:
-        agent: $AGENT_DIR
+  egress: !reset null
