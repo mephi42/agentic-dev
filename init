@@ -236,6 +236,7 @@ def main():
         r"^storage\.googleapis\.com$",
         r"^sqlite\.org$",
         r"^release-assets\.githubusercontent\.com$",
+        r"^patchew\.org$",
     ]
     if project.get("llvm"):
         allow.append(r"^apt\.llvm\.org$")
