@@ -91,6 +91,7 @@ def main():
         # The template's agent/dev/init/run-on symlinks are relative to this one.
         (project / "agentic-dev").symlink_to(AGENTIC_DEV)
         # agent/docker-compose.yml mounts all three.
+        shutil.rmtree(project / "src")
         (project / "src").symlink_to(source)
         (project / ".gitmodules").touch()
         check_call_verbose(["git", "init", "--quiet", project])
