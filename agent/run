@@ -3,7 +3,7 @@ import sys
 from os import environ, getgid, getuid
 from os.path import normpath
 from pathlib import Path
-from subprocess import DEVNULL, Popen, call, check_call, check_output
+from subprocess import call, check_call
 
 import yaml
 
@@ -16,11 +16,6 @@ def call_verbose(argv, **kwargs):
 def check_call_verbose(argv, **kwargs):
     print("+", argv, file=sys.stderr)
     check_call(argv, **kwargs)
-
-
-def popen_verbose(argv, **kwargs):
-    print("+", argv, file=sys.stderr)
-    return Popen(argv, **kwargs)
 
 
 def find_agent(agent_dir, agent):
@@ -86,10 +81,21 @@ def main():
     if tmp is not None:
         agent_service["tmpfs"] = [f"/tmp:exec,mode=1777,size={tmp}"]
 
+    tunnels = {
+        host: [
+            {"name": name, "path": container_cfg["path"]}
+            for name, container_cfg in host_cfg["containers"].items()
+        ]
+        for host, host_cfg in cfg.get("hosts", {}).items()
+    }
+    tunnels_yml = agent_dir / f"tunnels-{cfg['project']['name']}.yml"
+    tunnels_yml.write_text(yaml.safe_dump(tunnels, sort_keys=False))
+    tunnel_service = {"volumes": [f"./{tunnels_yml.name}:/tunnels.yml:ro"]}
+
     run_yml = agent_dir / f"run-{cfg['project']['name']}.yml"
     run_yml.write_text(
         yaml.safe_dump(
-            {"services": {"agent": agent_service}},
+            {"services": {"agent": agent_service, "tunnel": tunnel_service}},
             sort_keys=False,
         )
     )
@@ -112,36 +118,13 @@ def main():
         "WORKING_DIR": cfg["project"]["working-dir"],
         "REVIEW_PROMPTS_PROJECT": rp_project,
     }
-    tunnels = []
     try:
-        for host, host_cfg in cfg.get("hosts", {}).items():
-            remote_home = check_output(["ssh", host, "pwd"], text=True).strip()
-            tunnel_args = [
-                "autossh",
-                "-M",
-                "0",
-                "-o",
-                "ServerAliveInterval=30",
-                "-o",
-                "ServerAliveCountMax=3",
-                "-o",
-                "StreamLocalBindUnlink=yes",
-            ]
-            for name, container_cfg in host_cfg["containers"].items():
-                path = container_cfg["path"]
-                local_sock = agent_dir / "home" / ".ssh" / f"sshd-{name}.sock"
-                remote_sock = f"{remote_home}/{path}/dev/home/.ssh/sshd.sock"
-                tunnel_args.extend(["-L", f"{local_sock}:{remote_sock}"])
-            tunnel_args.extend(["-N", host])
-            tunnels.append(popen_verbose(tunnel_args, stdin=DEVNULL))
         status = call_verbose(
             ["docker", "compose", "run", "--build", "--remove-orphans", "agent"],
             cwd=agent_dir,
             env=env,
         )
     finally:
-        for tunnel in tunnels:
-            tunnel.terminate()
         check_call_verbose(
             ["docker", "compose", "down"],
             cwd=agent_dir,

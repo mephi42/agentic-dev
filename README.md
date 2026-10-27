@@ -73,7 +73,7 @@ for both.
 Every container can reach every other container by name, so agents can
 cross-build and cross-test across hosts.
 
-The SSH tunnels reaching the peer hosts are held open by a sidecar container
-that uses your own `~/.ssh`. It never prompts: `ssh <host>` must already work
-unattended from the host, or the tunnel fails. `~/.ssh` is mounted read-only
-and no agent is forwarded, so the key must be unencrypted.
+The SSH tunnels from the agent and dev containers to the hosts are held open by
+sidecar containers that use your own `~/.ssh`. They never prompt: `ssh <host>`
+must already work unattended from the host, or the tunnel fails. `~/.ssh` is
+mounted read-only and no agent is forwarded, so the key must be unencrypted.

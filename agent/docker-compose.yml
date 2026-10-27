@@ -20,7 +20,7 @@ services:
       - $PROJECT_DIR/.git:/home/user/.git
       - $PROJECT_DIR/.gitmodules:/home/user/.gitmodules
     working_dir: /home/user/$WORKING_DIR
-    depends_on: [egress]
+    depends_on: [egress, tunnel]
   egress:
     build:
       context: ./egress
@@ -32,6 +32,16 @@ services:
         driver_opts:
           com.docker.network.endpoint.ifname: walled0
       outside: {}
+  tunnel:
+    build: $PROJECT_DIR/dev/tunnel
+    environment:
+      HOST_GID: $GID
+      HOST_UID: $UID
+    init: true
+    networks: [outside]
+    volumes:
+      - $HOME/.ssh:/home/user/.ssh:ro
+      - ./home/.ssh:/sockets
 networks:
   walled:
     internal: true

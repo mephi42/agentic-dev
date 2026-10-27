@@ -21,6 +21,8 @@ services:
     depends_on: !override
       llm:
         condition: service_healthy
+      tunnel:
+        condition: service_started
   llm:
     image: ghcr.io/ggml-org/llama.cpp:server-rocm
     # llm has no network: download the model into ~/.cache/llama.cpp beforehand.
