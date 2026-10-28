@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import sys
 from os import environ, getgid, getuid
 from os.path import normpath
@@ -37,11 +38,20 @@ def find_agent(agent_dir, agent):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Run the agent container.")
+    parser.add_argument(
+        "-a",
+        "--agent",
+        help="agent to run, overriding project.agent in agentic-dev.yml",
+    )
+    args = parser.parse_args()
     agent_dir = Path(sys.argv[0]).parent
     project_dir = agent_dir.parent
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
-    agent_path = find_agent(agent_dir, cfg["project"].get("agent", "claude"))
+    agent_path = find_agent(
+        agent_dir, args.agent or cfg["project"].get("agent", "claude")
+    )
     packages = list(cfg.get("localhost", {}).get("packages", []))
 
     rp_project = cfg["project"].get("review-prompts", "")
