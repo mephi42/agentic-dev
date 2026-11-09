@@ -58,9 +58,11 @@ def ensure_key(priv: Path, comment: str):
 
 def ssh_client_config(names):
     """An ssh client config reaching each named container over its socket."""
+    # Retry: the tunnel binds the socket only once it has reached the host.
     return "\n".join(
         f"Host {name}\n"
-        f"    ProxyCommand socat - UNIX-CONNECT:/home/user/.ssh/sshd-{name}.sock\n"
+        f"    ProxyCommand socat - UNIX-CONNECT:/home/user/.ssh/sshd-{name}.sock"
+        ",retry=30,interval=1\n"
         f"    User user\n"
         for name in names
     )

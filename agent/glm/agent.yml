@@ -1,3 +1,4 @@
+x-command: claude --dangerously-skip-permissions
 services:
   agent:
     build:

@@ -37,6 +37,18 @@ def find_agent(agent_dir, agent):
     )
 
 
+def tmux_argv(agent: str, command: str, containers: list[str]) -> list[str]:
+    """A tmux session with the agent, a shell, and an ssh session to each container."""
+    argv = ["tmux", "new-session", "-n", agent]
+    # Type commands into shells, so that their windows survive them.
+    argv += [";", "send-keys", command, "Enter"]
+    argv += [";", "new-window", "-n", "shell"]
+    for name in containers:
+        argv += [";", "new-window", "-n", name]
+        argv += [";", "send-keys", f"ssh {name}", "Enter"]
+    return argv + [";", "select-window", "-t", "{start}"]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run the agent container.")
     parser.add_argument(
@@ -49,9 +61,9 @@ def main():
     project_dir = agent_dir.parent
     cfg = yaml.safe_load((project_dir / "agentic-dev.yml").read_text())
 
-    agent_path = find_agent(
-        agent_dir, args.agent or cfg["project"].get("agent", "claude")
-    )
+    agent = args.agent or cfg["project"].get("agent", "claude")
+    agent_path = find_agent(agent_dir, agent)
+    command = yaml.safe_load((agent_path / "agent.yml").read_text())["x-command"]
     packages = list(cfg.get("localhost", {}).get("packages", []))
 
     rp_project = cfg["project"].get("review-prompts", "")
@@ -86,7 +98,8 @@ def main():
                 point.touch()
         volumes.append(f"{source}:{target}:{mode or 'ro'}")
 
-    agent_service = {"volumes": volumes}
+    # tmux, unlike bash, does not reap orphans as pid 1.
+    agent_service = {"init": True, "volumes": volumes}
     tmp = cfg.get("localhost", {}).get("tmp")
     if tmp is not None:
         agent_service["tmpfs"] = [f"/tmp:exec,mode=1777,size={tmp}"]
@@ -130,7 +143,17 @@ def main():
     }
     try:
         status = call_verbose(
-            ["docker", "compose", "run", "--build", "--remove-orphans", "agent"],
+            [
+                "docker",
+                "compose",
+                "run",
+                "--build",
+                "--remove-orphans",
+                "agent",
+                *tmux_argv(
+                    agent, command, [c["name"] for t in tunnels.values() for c in t]
+                ),
+            ],
             cwd=agent_dir,
             env=env,
         )

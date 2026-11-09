@@ -1,3 +1,4 @@
+x-command: mirror
 services:
   agent:
     build:

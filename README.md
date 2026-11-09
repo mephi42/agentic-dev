@@ -42,8 +42,9 @@ repo supplies the machinery.
    ```
    ./agent/run
    ```
-   The agent can `ssh <container-name>` into any dev container to build and
-   test.
+   This opens tmux with the agent in the first window, a shell in the second,
+   and an ssh session to each dev container in the rest. The agent can
+   `ssh <container-name>` into any dev container to build and test.
 
 Talk to the local dev container directly with `dev/ssh [command...]`.
 
@@ -51,8 +52,9 @@ Talk to the local dev container directly with `dev/ssh [command...]`.
 
 `project.agent` names a directory with an `agent.yml` compose fragment and
 whatever it needs, looked up in `~/.local/share/agentic-dev/agent/<name>`
-first, then in agentic-dev's own [`agent/`](agent). To add one, copy the setup
-of an existing agent.
+first, then in agentic-dev's own [`agent/`](agent). Its mandatory top-level
+`x-command` is what the first tmux window runs. To add one, copy the setup of
+an existing agent.
 
 ## One-off sandboxes
 
