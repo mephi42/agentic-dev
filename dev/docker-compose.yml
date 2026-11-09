@@ -8,6 +8,7 @@ services:
       http_proxy: http://egress:8888
       https_proxy: http://egress:8888
     init: true
+    restart: always
     hostname: dev
     networks:
       walled:
@@ -20,6 +21,7 @@ services:
     depends_on: [egress, tunnel]
   egress:
     build: ./egress
+    restart: always
     hostname: egress
     networks:
       walled:
@@ -32,6 +34,7 @@ services:
       HOST_GID: $GID
       HOST_UID: $UID
     init: true
+    restart: always
     networks: [outside]
     volumes:
       - $HOME/.ssh:/home/user/.ssh:ro

@@ -35,7 +35,8 @@ repo supplies the machinery.
    ```
 4. Run `./init` on your workstation. This sets up the directories configured
    in `agentic-dev.yml` on the remote hosts, then builds and starts every
-   configured dev container in the background. Re-run it whenever you change
+   configured dev container in the background. The containers come back up
+   whenever the host's docker daemon restarts. Re-run it whenever you change
    the config.
 5. On your workstation, launch the agent:
    ```
