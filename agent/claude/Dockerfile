@@ -1,7 +1,7 @@
 FROM scratch AS claude
 ADD --chmod=755 \
-    --checksum=sha256:1859583ce32920595c61ef868bee52e1b1594f7486db209935e01f1e5e804ae2 \
-    https://downloads.claude.ai/claude-code-releases/2.1.283/linux-x64/claude \
+    --checksum=sha256:bfb3703ad5380242328459bc62ada4bde8ae7ba57c6e1eeadb9c00e08874c478 \
+    https://downloads.claude.ai/claude-code-releases/2.1.322/linux-x64/claude \
     /claude
 
 FROM base
