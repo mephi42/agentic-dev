@@ -222,6 +222,8 @@ def main():
     project_packages = list(project.get("packages", []))
     if project.get("ccache"):
         project_packages.append("ccache")
+    if project.get("perf"):
+        project_packages.append("linux-tools-generic")
 
     # Generate the egress allowlist.
     allow = [
@@ -260,6 +262,12 @@ def main():
     seccomp_syscalls_append = (
         project.get("seccomp", {}).get("syscalls", {}).get("append", [])
     )
+    if project.get("perf"):
+        # The default profile wants CAP_PERFMON, leave it to perf_event_paranoid:
+        # https://github.com/moby/profiles/blob/seccomp/v0.2.3/seccomp/default.json#L863-L873
+        seccomp_syscalls_append.append(
+            {"names": ["perf_event_open"], "action": "SCMP_ACT_ALLOW"}
+        )
     if len(seccomp_syscalls_append) > 0:
         with open(
             Path(__file__).resolve().parent / "seccomp" / "default.json",

@@ -38,6 +38,10 @@ RUN --mount=type=bind,source=packages.txt,target=/tmp/packages.txt \
         sudo \
         tmux \
         </tmp/packages.txt
+# Ubuntu's /usr/bin/perf only runs the build for uname -r, the host kernel.
+RUN for perf in /usr/lib/linux-tools/*/perf; do \
+        if [ -e "$perf" ]; then ln -sf "$perf" /usr/local/bin/perf; fi; \
+    done
 ARG CCACHE_MAXSIZE=
 RUN if [ -n "$CCACHE_MAXSIZE" ]; then \
         if [ -n "$LLVM_VERSION" ]; then \
