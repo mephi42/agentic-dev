@@ -1,4 +1,5 @@
 /common/packages-localhost.txt
+/common/pip-packages-localhost.txt
 /init.yml
 /run-*.yml
 /tunnels-*.yml

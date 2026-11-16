@@ -10,6 +10,7 @@
 /.local/state/
 /.mirror/
 /.npm/
+/.python_history
 /.viminfo
 /.wget-hsts
 /AGENTS.md

@@ -38,6 +38,13 @@ RUN --mount=type=bind,source=packages.txt,target=/tmp/packages.txt \
         sudo \
         tmux \
         </tmp/packages.txt
+# pip before --break-system-packages rejects the flag but skips the env var:
+# https://github.com/pypa/pip/blob/26.2.1/src/pip/_internal/cli/parser.py#L270-L274
+RUN --mount=type=bind,source=pip-packages.txt,target=/tmp/pip-packages.txt \
+    if [ -s /tmp/pip-packages.txt ]; then \
+        PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --no-cache-dir \
+            -r /tmp/pip-packages.txt; \
+    fi
 # Ubuntu's /usr/bin/perf only runs the build for uname -r, the host kernel.
 RUN for perf in /usr/lib/linux-tools/*/perf; do \
         if [ -e "$perf" ]; then ln -sf "$perf" /usr/local/bin/perf; fi; \

@@ -57,6 +57,15 @@ def main():
         "-p gdb. Repeatable.",
     )
     parser.add_argument(
+        "-P",
+        "--pip-package",
+        action="append",
+        default=[],
+        metavar="REQUIREMENT",
+        help="install an extra pip package into the agent container, e.g. "
+        "-P 'pyyaml>=6'. Repeatable.",
+    )
+    parser.add_argument(
         "-A",
         "--allow",
         action="append",
@@ -133,6 +142,8 @@ def main():
             cfg.setdefault("localhost", {}).setdefault("packages", []).extend(
                 args.package
             )
+        if args.pip_package:
+            cfg.setdefault("localhost", {})["pip-packages"] = args.pip_package
         if args.mount:
             mounts = cfg.setdefault("localhost", {}).setdefault("mounts", [])
             for mount in args.mount:
