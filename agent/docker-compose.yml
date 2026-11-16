@@ -12,6 +12,8 @@ services:
       https_proxy: http://egress:8888
       REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     hostname: agent
+    labels:
+      io.github.mephi42.agentic-dev.project-dir: $PROJECT_DIR
     networks: [walled]
     dns: ["0.0.0.0"]
     volumes:

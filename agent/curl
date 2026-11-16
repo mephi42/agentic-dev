@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Fetch a loopback URL from inside this project's agent container.
+
+Browser logins of agents end by redirecting the host's browser to something
+like http://127.0.0.1:38777/callback?code=..., which only the agent container
+can reach. Paste that URL here to deliver it.
+"""
+
+import sys
+from pathlib import Path
+from subprocess import check_output, run
+
+
+def main():
+    # The same PROJECT_DIR as agent/run computes.
+    project_dir = Path(sys.argv[0]).parent.parent.resolve()
+    # Set on the agent service in docker-compose.yml.
+    label = f"label=io.github.mephi42.agentic-dev.project-dir={project_dir}"
+    containers = check_output(
+        ["docker", "ps", "--filter", label, "--format", "{{.Names}}"], text=True
+    ).split()
+    if len(containers) != 1:
+        sys.exit(
+            f"{len(containers)} agent containers of {project_dir} are running: "
+            + ", ".join(containers)
+        )
+    (container,) = containers
+
+    # The container's http_proxy is the egress proxy, which cannot reach its loopback.
+    sys.exit(
+        run(
+            [
+                "docker",
+                "exec",
+                container,
+                "curl",
+                "--noproxy",
+                "*",
+                "--silent",
+                "--show-error",
+                *sys.argv[1:],
+            ]
+        ).returncode
+    )
+
+
+if __name__ == "__main__":
+    main()

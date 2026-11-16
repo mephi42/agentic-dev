@@ -67,6 +67,10 @@ To run an agent on a directory without scaffolding a project for it, run
 workstation shell: sync the local sources to a dev container and run a command
 there, or a shell if there is none. It needs `./agent/run` going.
 
+When an agent's browser login ends on a page like
+`http://127.0.0.1:38777/callback?code=...` that fails to load, pass that URL to
+`agent/curl`.
+
 ## Networking model
 
 The agent and dev containers have no direct route out. All egress goes through
