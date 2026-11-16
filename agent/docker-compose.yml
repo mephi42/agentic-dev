@@ -19,7 +19,6 @@ services:
     volumes:
       - ./home:/home/user
       - $PROJECT_DIR/src:/home/user/src
-      - $PROJECT_DIR/.git:/home/user/.git
       - $PROJECT_DIR/.gitmodules:/home/user/.gitmodules
     working_dir: /home/user/$WORKING_DIR
     depends_on: [egress, tunnel]

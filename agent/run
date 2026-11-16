@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import shutil
 import sys
 from os import environ, getgid, getuid
 from os.path import normpath
@@ -35,6 +36,25 @@ def find_agent(agent_dir, agent):
         + "\navailable agents: "
         + ", ".join(available)
     )
+
+
+def superproject(project_dir: Path, out: Path) -> list[str | dict]:
+    """Volumes for an empty ~/.git around the project's .git/modules."""
+    shutil.rmtree(out, ignore_errors=True)
+    check_call_verbose(["git", "init", "--quiet", out])
+    (out / ".git" / "modules").mkdir()
+    modules = (project_dir / ".git" / "modules").resolve()
+    # Prevent docker from creating it as root.
+    modules.mkdir(exist_ok=True)
+    volumes = [
+        f"{(out / '.git').resolve()}:/home/user/.git",
+        f"{modules}:/home/user/.git/modules",
+    ]
+    if (modules / "agentic-dev").exists():
+        volumes.append(
+            {"type": "tmpfs", "target": "/home/user/.git/modules/agentic-dev"}
+        )
+    return volumes
 
 
 def tmux_argv(agent: str, command: str, containers: list[str]) -> list[str]:
@@ -97,6 +117,8 @@ def main():
             else:
                 point.touch()
         volumes.append(f"{source}:{target}:{mode or 'ro'}")
+
+    volumes += superproject(project_dir, agent_dir / f"git-{cfg['project']['name']}")
 
     # tmux, unlike bash, does not reap orphans as pid 1.
     agent_service = {"init": True, "volumes": volumes}

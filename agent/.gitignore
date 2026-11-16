@@ -2,3 +2,5 @@
 /init.yml
 /run-*.yml
 /tunnels-*.yml
+/git-*/
+/home/src/

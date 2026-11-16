@@ -103,7 +103,7 @@ def main():
         shutil.copytree(TEMPLATE, project, symlinks=True)
         # The template's agent/dev/init/run-on symlinks are relative to this one.
         (project / "agentic-dev").symlink_to(AGENTIC_DEV)
-        # agent/docker-compose.yml mounts all three.
+        # agent/docker-compose.yml and agent/run mount these.
         shutil.rmtree(project / "src")
         (project / "src").symlink_to(source)
         (project / ".gitmodules").touch()
