@@ -28,6 +28,8 @@ project:
 #    - ~/.aws:/home/user/.aws
 #    - ~/.config/gcloud:/home/user/.config/gcloud:rw
 #  tmp: 4g                   # agent /tmp: a tmpfs this big, exec allowed
+#  devices:                  # host devices; the agent joins their groups
+#    - /dev/ttyACM0
 hosts:
   <host ssh alias>:           # you must configure host ssh to understand this
     containers:

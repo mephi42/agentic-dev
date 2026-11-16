@@ -104,6 +104,19 @@ def main():
     if tmp is not None:
         agent_service["tmpfs"] = [f"/tmp:exec,mode=1777,size={tmp}"]
 
+    devices = cfg.get("localhost", {}).get("devices", [])
+    gids = set()
+    for device in devices:
+        try:
+            gids.add(Path(device).stat().st_gid)
+        except FileNotFoundError:
+            sys.exit(f"{device} does not exist")
+    if devices:
+        agent_service["devices"] = devices
+    agent_service["environment"] = {
+        "HOST_GIDS": " ".join(str(gid) for gid in sorted(gids))
+    }
+
     tunnels = {
         host: [
             {"name": name, "path": container_cfg["path"]}
