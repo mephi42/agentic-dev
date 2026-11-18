@@ -22,6 +22,8 @@ services:
     dns: ["0.0.0.0"]
     volumes:
       - ./home:/home/user
+      # init writes here, so keep it out of the agent's reach.
+      - ./home/.ssh:/home/user/.ssh:ro
       - $PROJECT_DIR/src:/home/user/src
       - $PROJECT_DIR/.gitmodules:/home/user/.gitmodules
     working_dir: /home/user/$WORKING_DIR
