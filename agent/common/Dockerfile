@@ -14,6 +14,5 @@ RUN --mount=type=bind,source=pip-packages-localhost.txt,target=/tmp/pip-packages
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 COPY docker-entrypoint-user.sh /docker-entrypoint-user.sh
 ENV LANG=C.UTF-8
-ENV PATH=/home/user/.local/bin:$PATH
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/bash"]

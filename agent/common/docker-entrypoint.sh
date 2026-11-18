@@ -13,4 +13,5 @@ for gid in ${HOST_GIDS:-}; do
     usermod -a -G "$gid" user
 done
 exec setpriv --reuid=user --regid=group --init-groups --inh-caps=-all \
-         env HOME=/home/user /docker-entrypoint-user.sh "$@"
+         env HOME=/home/user PATH="/home/user/.local/bin:$PATH" \
+         /docker-entrypoint-user.sh "$@"

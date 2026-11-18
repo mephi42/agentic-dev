@@ -47,7 +47,7 @@ def main():
             "--env",
             "HOME=/home/user",
             containers[0],
-            "run-on",
+            "/home/user/.local/bin/run-on",
             *args,
         ],
     )

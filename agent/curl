@@ -32,6 +32,8 @@ def main():
             [
                 "docker",
                 "exec",
+                "--user",
+                "user",
                 container,
                 "curl",
                 "--noproxy",
