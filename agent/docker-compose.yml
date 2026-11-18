@@ -50,4 +50,7 @@ services:
 networks:
   walled:
     internal: true
+    # Leaves the bridge without an address the host could serve on: https://github.com/docker/docs/blob/f8d4abc333036d7d71928bab49a417876d348966/content/manuals/engine/network/port-publishing.md?plain=1#L186-L192
+    driver_opts:
+      com.docker.network.bridge.gateway_mode_ipv4: isolated
   outside: {}
