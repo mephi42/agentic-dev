@@ -12,6 +12,10 @@ services:
       https_proxy: http://egress:8888
       REVIEW_PROMPTS_PROJECT: $REVIEW_PROMPTS_PROJECT
     hostname: agent
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    # docker-entrypoint.sh: shadow-utils fchown /etc/shadow, setpriv switches user.
+    cap_add: [CHOWN, SETGID, SETUID]
     labels:
       io.github.mephi42.agentic-dev.project-dir: $PROJECT_DIR
     networks: [walled]
