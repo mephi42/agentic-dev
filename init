@@ -253,6 +253,7 @@ def main():
                 r"^index\.crates\.io$",
                 r"^static\.crates\.io$",
                 r"^crates\.io$",
+                r"^static\.rust-lang\.org$",
             ]
         )
     allow.extend(project.get("allow", []))
