@@ -15,7 +15,8 @@ services:
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
     # docker-entrypoint.sh: shadow-utils fchown /etc/shadow, setpriv switches user.
-    cap_add: [CHOWN, SETGID, SETUID]
+    # docker-init: runs as root, forwards signals to the non-root child.
+    cap_add: [CHOWN, KILL, SETGID, SETUID]
     labels:
       io.github.mephi42.agentic-dev.project-dir: $PROJECT_DIR
     networks: [walled]
