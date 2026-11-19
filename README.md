@@ -83,6 +83,7 @@ cross-build and cross-test across hosts.
 The SSH tunnels from the agent and dev containers to the hosts are held open by
 sidecar containers that use your own `~/.ssh`. They never prompt: `ssh <host>`
 must already work unattended from the host, or the tunnel fails. `~/.ssh` is
-mounted read-only and no agent is forwarded, so the key must be unencrypted.
+mounted read-only, so the key must be unencrypted or loaded into your ssh agent.
+The agent is forwarded to the hosts, which then need no keys of their own.
 The tunnels between the dev containers come up with `./agent/run` and are not
 restored once it is gone.

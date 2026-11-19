@@ -45,11 +45,18 @@ services:
     environment:
       HOST_GID: $GID
       HOST_UID: $UID
+      SSH_AUTH_SOCK: /ssh-agent.sock
     init: true
     networks: [outside]
     volumes:
       - $HOME/.ssh:/home/user/.ssh:ro
       - ./home/.ssh:/sockets
+      - type: bind
+        source: ${SSH_AUTH_SOCK:-/dev/null}
+        target: /ssh-agent.sock
+        bind:
+          # Fail on a stale socket instead of creating a root-owned directory: https://github.com/compose-spec/compose-spec/blob/6b3a2a93e77c30ded1aa8264307e74d1208a6eae/spec.md?plain=1#L2399
+          create_host_path: false
 networks:
   walled:
     internal: true

@@ -52,7 +52,7 @@ def main():
         if len(peer_tunnels) > 0:
             # wait returns 0, on which autossh gives up: https://sources.debian.org/src/autossh/1.4g-1/autossh.c/#L1030-L1038
             command = " ".join([*peer_tunnels, "wait; exit 1"])
-            tunnel_args.extend([host, command])
+            tunnel_args.extend(["-A", host, command])
         else:
             tunnel_args.extend(["-N", host])
         # Restart ssh even when its first run fails: https://sources.debian.org/src/autossh/1.4g-1/autossh.c/#L999-L1011
