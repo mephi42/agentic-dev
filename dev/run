@@ -2,7 +2,7 @@
 """Build and (re)start the dev containers in the background."""
 
 import sys
-from os import environ, getgid, getuid
+from os import getgid, getuid
 from os.path import exists
 from pathlib import Path
 from subprocess import check_call
@@ -15,13 +15,11 @@ def check_call_verbose(argv, **kwargs):
 
 def main():
     dev_dir = Path(sys.argv[0]).parent
-    env = {
-        **environ,
-        "UID": str(getuid()),
-        "GID": str(getgid()),
-    }
+    # docker compose reads it, whoever runs it here.
+    env = [f"UID={getuid()}", f"GID={getgid()}"]
     if exists("/dev/kvm"):
-        env["KVM_GID"] = str(Path("/dev/kvm").stat().st_gid)
+        env.append(f"KVM_GID={Path('/dev/kvm').stat().st_gid}")
+    (dev_dir / ".env").write_text("".join(line + "\n" for line in env))
     check_call_verbose(
         [
             "docker",
@@ -33,7 +31,6 @@ def main():
             "--wait",
         ],
         cwd=dev_dir,
-        env=env,
     )
 
 
