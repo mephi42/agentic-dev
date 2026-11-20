@@ -18,7 +18,7 @@ services:
     volumes:
       - ./home:/home/user
       - ../src:/home/user/src
-    depends_on: [egress, tunnel]
+    depends_on: [egress]
   egress:
     build: ./egress
     restart: always
@@ -34,8 +34,9 @@ services:
       HOST_GID: $GID
       HOST_UID: $UID
     init: true
-    restart: always
     networks: [outside]
+    # The agent's tunnel container starts it.
+    profiles: [tunnel]
     volumes:
       - $HOME/.ssh:/home/user/.ssh:ro
       - ./home/.ssh:/sockets
