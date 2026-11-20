@@ -68,6 +68,18 @@ def ssh_client_config(names):
     )
 
 
+def tunnels(containers, homes):
+    """The sshd sockets that a tunnel container forwards, by host."""
+    by_host = {}
+    for container in containers:
+        # sshd resolves the path of a forwarded socket from /: https://github.com/openssh/openssh-portable/blob/8241b9c0529228b4b86d88b1a6076fb9f97e4a99/serverloop.c#L502
+        dev = f"{homes[container.host]}/{container.path}/dev"
+        by_host.setdefault(container.host, []).append(
+            {"name": container.name, "dev": dev}
+        )
+    return yaml.safe_dump(by_host, sort_keys=False)
+
+
 @dataclass
 class Container:
     host: str
@@ -162,6 +174,12 @@ def main():
     cfg = yaml.safe_load((BASEDIR / "agentic-dev.yml").read_text())
     project = cfg["project"]
     base_image = project.get("base-image", "ubuntu:24.04")
+    homes = {
+        host: check_output_verbose(
+            ["ssh", host, "pwd"], stdin=DEVNULL, text=True
+        ).strip()
+        for host in cfg.get("hosts", {})
+    }
     containers = [
         Container(
             host=host,
@@ -325,12 +343,7 @@ def main():
                 sort_keys=False,
             )
         )
-        tunnels_by_host = {}
-        for peer in peers:
-            tunnels_by_host.setdefault(peer.host, []).append(
-                {"name": peer.name, "path": peer.path}
-            )
-        container.tunnels.write_text(yaml.safe_dump(tunnels_by_host, sort_keys=False))
+        container.tunnels.write_text(tunnels(peers, homes))
         # The apt and pip package lists: project-wide packages plus this
         # container's.
         packages = project_packages + container.packages
@@ -355,6 +368,9 @@ def main():
             f"{container.name} {container.host_pub.read_text().strip()}\n"
         )
     agent_hosts.write_text("".join(known_hosts))
+    (BASEDIR / "agent" / f"tunnels-{project['name']}.yml").write_text(
+        tunnels(containers, homes)
+    )
 
     # Make sure the overlay does not override anything.
     dev_dir = BASEDIR / "dev"
